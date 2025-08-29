@@ -14,8 +14,7 @@ namespace TareasApi.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // Configuración de la entidad Tarea
+            
             modelBuilder.Entity<Tarea>(entity =>
             {
                 entity.ToTable("Tareas");
@@ -51,8 +50,7 @@ namespace TareasApi.Data
                     .HasColumnType("datetime")
                     .IsRequired(false);
             });
-
-            // Datos iniciales (opcional)
+            
             modelBuilder.Entity<Tarea>().HasData(
                 new Tarea
                 {

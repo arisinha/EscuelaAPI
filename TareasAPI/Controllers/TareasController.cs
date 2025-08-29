@@ -17,20 +17,16 @@ namespace TareasApi.Controllers
         {
             _tareaService = tareaService;
         }
-
-        /// <summary>
-        /// Obtiene todas las tareas
-        /// </summary>
+        
+        //get all tareas
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TareaDto>>> GetAllTareas()
         {
             var tareas = await _tareaService.GetAllTareasAsync();
             return Ok(new { success = true, data = tareas, count = tareas.Count() });
         }
-
-        /// <summary>
-        /// Obtiene una tarea por su ID
-        /// </summary>
+        
+        //get por ID de tarea
         [HttpGet("{id:int}")]
         public async Task<ActionResult<TareaDto>> GetTareaById(int id)
         {
@@ -44,10 +40,8 @@ namespace TareasApi.Controllers
 
             return Ok(new { success = true, data = tarea });
         }
-
-        /// <summary>
-        /// Obtiene tareas filtradas por estado
-        /// </summary>
+        
+        //get tarea por estado 
         [HttpGet("estado/{estado}")]
         public async Task<ActionResult<IEnumerable<TareaDto>>> GetTareasByEstado(EstadoTarea estado)
         {
@@ -57,10 +51,8 @@ namespace TareasApi.Controllers
             var tareas = await _tareaService.GetTareasByEstadoAsync(estado);
             return Ok(new { success = true, data = tareas, count = tareas.Count(), estado });
         }
-
-        /// <summary>
-        /// Crea una nueva tarea
-        /// </summary>
+        
+        //crear tarea
         [HttpPost]
         public async Task<ActionResult<TareaDto>> CreateTarea([FromBody] CrearTareaDto crearTareaDto)
         {
@@ -79,10 +71,8 @@ namespace TareasApi.Controllers
                 new { success = true, data = tarea, message = "Tarea creada exitosamente" }
             );
         }
-
-        /// <summary>
-        /// Actualiza una tarea existente
-        /// </summary>
+        
+        //actualizar tarea 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<TareaDto>> UpdateTarea(int id, [FromBody] ActualizarTareaDto actualizarTareaDto)
         {
@@ -105,9 +95,7 @@ namespace TareasApi.Controllers
             return Ok(new { success = true, data = tarea, message = "Tarea actualizada exitosamente" });
         }
 
-        /// <summary>
-        /// Elimina una tarea
-        /// </summary>
+        //eliminar tarea
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteTarea(int id)
         {
