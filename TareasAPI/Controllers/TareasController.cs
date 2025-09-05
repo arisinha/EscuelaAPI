@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TareasApi.DTOs;
 using TareasApi.Models;
@@ -8,6 +9,7 @@ namespace TareasApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [Authorize]
     public class TareasController : ControllerBase
     {
         private readonly ITareaService _tareaService;
