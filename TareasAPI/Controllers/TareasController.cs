@@ -17,8 +17,7 @@ namespace TareasApi.Controllers
         public TareasController(ITareaService tareaService)
         {
             _tareaService = tareaService;
-        }
-        
+        }        
         //get all tareas
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TareaDto>>> GetAllTareas()
