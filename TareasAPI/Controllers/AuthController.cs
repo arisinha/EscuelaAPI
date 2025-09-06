@@ -20,7 +20,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest loginRequest)
     {
-        if (loginRequest.Email != "root" || loginRequest.Password != "12345678")
+        if (loginRequest.Email != "root" || loginRequest.Password != "naled.13")
         {
             return Unauthorized("Credenciales inválidas.");
         }
