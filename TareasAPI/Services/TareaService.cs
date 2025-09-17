@@ -3,84 +3,104 @@ using TareasApi.Models;
 using TareasApi.Repositories.Interfaces;
 using TareasApi.Services.Interfaces;
 
-namespace TareasApi.Services
+namespace TareasApi.Services;
+
+public class TareaService : ITareaService
 {
-    public class TareaService : ITareaService
+    private readonly ITareaRepository _tareaRepository;
+
+    // Injects the repository, not the DbContext
+    public TareaService(ITareaRepository tareaRepository)
     {
-        private readonly ITareaRepository _tareaRepository;
+        _tareaRepository = tareaRepository;
+    }
 
-        public TareaService(ITareaRepository tareaRepository)
+    public async Task<TareaDto> CreateForUserAsync(CrearTareaDto crearTareaDto, int userId)
+    {
+        var tarea = new Tarea
         {
-            _tareaRepository = tareaRepository;
+            Titulo = crearTareaDto.Titulo,
+            Descripcion = crearTareaDto.Descripcion,
+            UsuarioId = userId,
+            Estado = EstadoTarea.Pendiente,
+            FechaCreacion = DateTime.UtcNow,
+            Usuario = null! // EF Core will populate this
+        };
+
+        var nuevaTarea = await _tareaRepository.CreateAsync(tarea);
+        return MapTareaToDto(nuevaTarea);
+    }
+
+    public async Task<bool> DeleteForUserAsync(int tareaId, int userId)
+    {
+        // First, verify the task belongs to the user
+        var tarea = await _tareaRepository.GetByIdAndUserIdAsync(tareaId, userId);
+        if (tarea == null)
+        {
+            return false; // Not found or not authorized
         }
 
-        public async Task<IEnumerable<TareaDto>> GetAllTareasAsync()
+        return await _tareaRepository.DeleteAsync(tareaId);
+    }
+
+    public async Task<IEnumerable<TareaDto>> GetAllByUserIdAsync(int userId)
+    {
+        var tareas = await _tareaRepository.GetAllByUserIdAsync(userId);
+        return tareas.Select(MapTareaToDto);
+    }
+
+    public async Task<TareaDto?> GetByIdAndUserIdAsync(int tareaId, int userId)
+    {
+        var tarea = await _tareaRepository.GetByIdAndUserIdAsync(tareaId, userId);
+        return tarea == null ? null : MapTareaToDto(tarea);
+    }
+
+    public async Task<TareaDto?> UpdateForUserAsync(int tareaId, ActualizarTareaDto dto, int userId)
+    {
+        var tarea = await _tareaRepository.GetByIdAndUserIdAsync(tareaId, userId);
+        if (tarea == null)
         {
-            var tareas = await _tareaRepository.GetAllAsync();
-            return tareas.Select(MapToDto);
+            return null; // Not found or not authorized
         }
 
-        public async Task<TareaDto?> GetTareaByIdAsync(int id)
-        {
-            var tarea = await _tareaRepository.GetByIdAsync(id);
-            return tarea != null ? MapToDto(tarea) : null;
-        }
+        // Apply updates from DTO
+        if (!string.IsNullOrEmpty(dto.Titulo))
+            tarea.Titulo = dto.Titulo;
+        if (dto.Descripcion != null)
+            tarea.Descripcion = dto.Descripcion;
+        if (dto.Estado.HasValue)
+            tarea.Estado = dto.Estado.Value;
 
-        public async Task<IEnumerable<TareaDto>> GetTareasByEstadoAsync(EstadoTarea estado)
-        {
-            var tareas = await _tareaRepository.GetByEstadoAsync(estado);
-            return tareas.Select(MapToDto);
-        }
+        tarea.FechaActualizacion = DateTime.UtcNow;
 
-        public async Task<TareaDto> CreateTareaAsync(CrearTareaDto crearTareaDto)
-        {
-            var tarea = new Tarea
-            {
-                Titulo = crearTareaDto.Titulo,
-                Descripcion = crearTareaDto.Descripcion,
-                Estado = crearTareaDto.Estado
-            };
+        var tareaActualizada = await _tareaRepository.UpdateAsync(tarea);
+        return tareaActualizada == null ? null : MapTareaToDto(tareaActualizada);
+    }
 
-            var createdTarea = await _tareaRepository.CreateAsync(tarea);
-            return MapToDto(createdTarea);
-        }
+    public IEnumerable<object> GetEstados()
+    {
+        return Enum.GetValues<EstadoTarea>()
+            .Select(e => new { id = (int)e, nombre = e.ToString() })
+            .ToList();
+    }
 
-        public async Task<TareaDto?> UpdateTareaAsync(int id, ActualizarTareaDto actualizarTareaDto)
-        {
-            var existingTarea = await _tareaRepository.GetByIdAsync(id);
-            if (existingTarea == null)
-                return null;
+    // Helper method to map Entity to DTO
+    private static TareaDto MapTareaToDto(Tarea tarea)
+    {
+        var usuarioDto = new UsuarioDto(
+            tarea.Usuario.Id,
+            tarea.Usuario.NombreUsuario,
+            tarea.Usuario.NombreCompleto
+        );
 
-            // Solo actualizar campos que no sean null
-            if (!string.IsNullOrEmpty(actualizarTareaDto.Titulo))
-                existingTarea.Titulo = actualizarTareaDto.Titulo;
-            
-            if (actualizarTareaDto.Descripcion != null)
-                existingTarea.Descripcion = actualizarTareaDto.Descripcion;
-            
-            if (actualizarTareaDto.Estado.HasValue)
-                existingTarea.Estado = actualizarTareaDto.Estado.Value;
-
-            var updatedTarea = await _tareaRepository.UpdateAsync(id, existingTarea);
-            return updatedTarea != null ? MapToDto(updatedTarea) : null;
-        }
-
-        public async Task<bool> DeleteTareaAsync(int id)
-        {
-            return await _tareaRepository.DeleteAsync(id);
-        }
-
-        private static TareaDto MapToDto(Tarea tarea)
-        {
-            return new TareaDto
-            {
-                Id = tarea.Id,
-                Titulo = tarea.Titulo,
-                Descripcion = tarea.Descripcion,
-                Estado = tarea.Estado,
-                FechaCreacion = tarea.FechaCreacion,
-                FechaActualizacion = tarea.FechaActualizacion
-            };
-        }
+        return new TareaDto(
+            tarea.Id,
+            tarea.Titulo,
+            tarea.Descripcion,
+            tarea.Estado.ToString(),
+            tarea.FechaCreacion,
+            tarea.FechaActualizacion,
+            usuarioDto
+        );
     }
 }

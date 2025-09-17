@@ -3,74 +3,64 @@ using TareasApi.Data;
 using TareasApi.Models;
 using TareasApi.Repositories.Interfaces;
 
-namespace TareasApi.Repositories
+namespace TareasApi.Repositories;
+
+public class TareaRepository : ITareaRepository
 {
-    public class TareaRepository : ITareaRepository
+    private readonly ApplicationDbContext _context;
+
+    public TareaRepository(ApplicationDbContext context)
     {
-        private readonly TareasDbContext _context;
+        _context = context;
+    }
 
-        public TareaRepository(TareasDbContext context)
+    public async Task<Tarea> CreateAsync(Tarea tarea)
+    {
+        _context.Tareas.Add(tarea);
+        await _context.SaveChangesAsync();
+        // Load the related user data after creation
+        await _context.Entry(tarea).Reference(t => t.Usuario).LoadAsync();
+        return tarea;
+    }
+
+    public async Task<bool> DeleteAsync(int tareaId)
+    {
+        var tarea = await _context.Tareas.FindAsync(tareaId);
+        if (tarea == null)
         {
-            _context = context;
+            return false;
         }
 
-        public async Task<IEnumerable<Tarea>> GetAllAsync()
-        {
-            return await _context.Tareas
-                .OrderByDescending(t => t.FechaCreacion)
-                .ToListAsync();
-        }
+        _context.Tareas.Remove(tarea);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 
-        public async Task<Tarea?> GetByIdAsync(int id)
-        {
-            return await _context.Tareas.FindAsync(id);
-        }
+    public async Task<IEnumerable<Tarea>> GetAllByUserIdAsync(int userId)
+    {
+        return await _context.Tareas
+            .Include(t => t.Usuario) // Include related user data
+            .Where(t => t.UsuarioId == userId)
+            .OrderByDescending(t => t.FechaCreacion)
+            .ToListAsync();
+    }
 
-        public async Task<IEnumerable<Tarea>> GetByEstadoAsync(EstadoTarea estado)
-        {
-            return await _context.Tareas
-                .Where(t => t.Estado == estado)
-                .OrderByDescending(t => t.FechaCreacion)
-                .ToListAsync();
-        }
+    public async Task<Tarea?> GetByIdAndUserIdAsync(int tareaId, int userId)
+    {
+        return await _context.Tareas
+            .Include(t => t.Usuario) // Include related user data
+            .FirstOrDefaultAsync(t => t.Id == tareaId && t.UsuarioId == userId);
+    }
 
-        public async Task<Tarea> CreateAsync(Tarea tarea)
-        {
-            tarea.FechaCreacion = DateTime.UtcNow;
-            _context.Tareas.Add(tarea);
-            await _context.SaveChangesAsync();
-            return tarea;
-        }
-
-        public async Task<Tarea?> UpdateAsync(int id, Tarea tarea)
-        {
-            var existingTarea = await _context.Tareas.FindAsync(id);
-            if (existingTarea == null)
-                return null;
-
-            existingTarea.Titulo = tarea.Titulo;
-            existingTarea.Descripcion = tarea.Descripcion;
-            existingTarea.Estado = tarea.Estado;
-            existingTarea.FechaActualizacion = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            return existingTarea;
-        }
-
-        public async Task<bool> DeleteAsync(int id)
-        {
-            var tarea = await _context.Tareas.FindAsync(id);
-            if (tarea == null)
-                return false;
-
-            _context.Tareas.Remove(tarea);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> ExistsAsync(int id)
-        {
-            return await _context.Tareas.AnyAsync(t => t.Id == id);
-        }
+    public async Task<Tarea?> UpdateAsync(Tarea tarea)
+    {
+        _context.Entry(tarea).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+        return tarea;
+    }
+    
+    public async Task<Tarea?> FindByIdAsync(int tareaId)
+    {
+        return await _context.Tareas.FindAsync(tareaId);
     }
 }

@@ -1,14 +1,14 @@
-namespace TareasAPI.Middlewares;
+namespace TareasApi.Middlewares;
 
 public static class MiddlewareExtensions
 {
-    public static IApplicationBuilder UseAuditMiddleware(this IApplicationBuilder builder)
+    public static void UseAuditMiddleware(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<AuditMiddleware>();
+        builder.UseMiddleware<AuditMiddleware>();
     }
 
-    public static IApplicationBuilder UseExceptionMiddleware(this IApplicationBuilder builder)
+    public static void UseExceptionMiddleware(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<ExceptionMiddleware>();
+        builder.UseMiddleware<ExceptionMiddleware>();
     }
 }

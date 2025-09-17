@@ -1,38 +1,36 @@
 using System.ComponentModel.DataAnnotations;
 using TareasApi.Models;
 
-namespace TareasApi.DTOs
-{
-    public class TareaDto
-    {
-        public int Id { get; set; }
-        public string Titulo { get; set; } = string.Empty;
-        public string? Descripcion { get; set; }
-        public EstadoTarea Estado { get; set; }
-        public DateTime FechaCreacion { get; set; }
-        public DateTime? FechaActualizacion { get; set; }
-    }
+namespace TareasApi.DTOs;
 
-    public class CrearTareaDto
-    {
-        [Required(ErrorMessage = "El título es obligatorio")]
-        [StringLength(200, ErrorMessage = "El título no puede exceder 200 caracteres")]
-        public string Titulo { get; set; } = string.Empty;
+// The main DTO for returning a task (Corrected)
+public record TareaDto(
+    int Id,
+    string Titulo,
+    string? Descripcion,
+    string Estado,
+    DateTime FechaCreacion,
+    DateTime? FechaActualizacion,
+    UsuarioDto Usuario
+);
 
-        [StringLength(500, ErrorMessage = "La descripción no puede exceder 500 caracteres")]
-        public string? Descripcion { get; set; }
+// DTO for creating a new task
+public record CrearTareaDto(
+    [Required(ErrorMessage = "El título es requerido.")]
+    [StringLength(200, ErrorMessage = "El título no puede exceder los 200 caracteres.")]
+    string Titulo,
 
-        public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
-    }
+    [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
+    string? Descripcion
+);
 
-    public class ActualizarTareaDto
-    {
-        [StringLength(200, ErrorMessage = "El título no puede exceder 200 caracteres")]
-        public string? Titulo { get; set; }
+// DTO for updating an existing task
+public record ActualizarTareaDto(
+    [StringLength(200, ErrorMessage = "El título no puede exceder los 200 caracteres.")]
+    string? Titulo,
 
-        [StringLength(500, ErrorMessage = "La descripción no puede exceder 500 caracteres")]
-        public string? Descripcion { get; set; }
+    [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
+    string? Descripcion,
 
-        public EstadoTarea? Estado { get; set; }
-    }
-}
+    EstadoTarea? Estado
+);

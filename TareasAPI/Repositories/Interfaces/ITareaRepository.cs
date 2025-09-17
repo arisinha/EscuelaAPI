@@ -1,15 +1,13 @@
 using TareasApi.Models;
 
-namespace TareasApi.Repositories.Interfaces
+namespace TareasApi.Repositories.Interfaces;
+
+public interface ITareaRepository
 {
-    public interface ITareaRepository
-    {
-        Task<IEnumerable<Tarea>> GetAllAsync();
-        Task<Tarea?> GetByIdAsync(int id);
-        Task<IEnumerable<Tarea>> GetByEstadoAsync(EstadoTarea estado);
-        Task<Tarea> CreateAsync(Tarea tarea);
-        Task<Tarea?> UpdateAsync(int id, Tarea tarea);
-        Task<bool> DeleteAsync(int id);
-        Task<bool> ExistsAsync(int id);
-    }
+    Task<IEnumerable<Tarea>> GetAllByUserIdAsync(int userId);
+    Task<Tarea?> GetByIdAndUserIdAsync(int tareaId, int userId);
+    Task<Tarea> CreateAsync(Tarea tarea);
+    Task<Tarea?> UpdateAsync(Tarea tarea);
+    Task<bool> DeleteAsync(int tareaId);
+    Task<Tarea?> FindByIdAsync(int tareaId);
 }
