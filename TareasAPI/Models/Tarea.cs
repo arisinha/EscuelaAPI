@@ -1,32 +1,38 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TareasApi.Models
+namespace TareasApi.Models;
+
+public class Tarea
 {
-    public class Tarea
-    {
-        [Key]
-        public int Id { get; set; }
+    [Key]
+    public int Id { get; set; }
 
-        [Required]
-        [StringLength(200)]
-        public string Titulo { get; set; } = string.Empty;
+    [Required]
+    [StringLength(200)]
+    public string Titulo { get; set; } = string.Empty;
 
-        [StringLength(500)]
-        public string? Descripcion { get; set; }
+    [StringLength(500)]
+    public string? Descripcion { get; set; }
 
-        [Required]
-        public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
+    [Required]
+    public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
 
-        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
-        
-        public DateTime? FechaActualizacion { get; set; }
-    }
+    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
-    public enum EstadoTarea
-    {
-        Pendiente = 0,
-        EnProgreso = 1,
-        Completada = 2,
-        Cancelada = 3
-    }
+    public DateTime? FechaActualizacion { get; set; }
+
+    [Column("usuario_id")]
+    public int UsuarioId { get; set; }
+
+    [ForeignKey("UsuarioId")]
+    public virtual required Usuario Usuario { get; set; }
+}
+
+public enum EstadoTarea
+{
+    Pendiente = 0,
+    EnProgreso = 1,
+    Completada = 2,
+    Cancelada = 3
 }

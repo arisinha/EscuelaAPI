@@ -1,113 +1,102 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TareasApi.DTOs;
-using TareasApi.Models;
 using TareasApi.Services.Interfaces;
 
-namespace TareasApi.Controllers
+namespace TareasApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize] // Requires authentication for all endpoints in this controller
+public class TareasController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
-    [Authorize]
-    public class TareasController : ControllerBase
+    private readonly ITareaService _tareaService;
+
+    public TareasController(ITareaService tareaService)
     {
-        private readonly ITareaService _tareaService;
+        _tareaService = tareaService;
+    }
 
-        public TareasController(ITareaService tareaService)
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<TareaDto>>> GetTareas()
+    {
+        var userId = GetCurrentUserId();
+        var tareas = await _tareaService.GetAllByUserIdAsync(userId);
+        return Ok(new { success = true, count = tareas.Count(), data = tareas });
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<TareaDto>> GetTarea(int id)
+    {
+        var userId = GetCurrentUserId();
+        var tarea = await _tareaService.GetByIdAndUserIdAsync(id, userId);
+        if (tarea == null)
         {
-            _tareaService = tareaService;
-        }        
-        //get all tareas
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TareaDto>>> GetAllTareas()
+            return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
+        }
+        return Ok(new { success = true, data = tarea });
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<TareaDto>> CreateTarea(CrearTareaDto crearTareaDto)
+    {
+        if (!ModelState.IsValid)
         {
-            var tareas = await _tareaService.GetAllTareasAsync();
-            return Ok(new { success = true, data = tareas, count = tareas.Count() });
+            return BadRequest(new { success = false, errors = ModelState });
+        }
+
+        var userId = GetCurrentUserId();
+        var nuevaTarea = await _tareaService.CreateForUserAsync(crearTareaDto, userId);
+
+        return CreatedAtAction(
+            nameof(GetTarea),
+            new { id = nuevaTarea.Id },
+            new { success = true, message = "Tarea creada exitosamente", data = nuevaTarea }
+        );
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateTarea(int id, ActualizarTareaDto actualizarTareaDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new { success = false, errors = ModelState });
         }
         
-        //get por ID de tarea
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<TareaDto>> GetTareaById(int id)
+        var userId = GetCurrentUserId();
+        var tareaActualizada = await _tareaService.UpdateForUserAsync(id, actualizarTareaDto, userId);
+        if (tareaActualizada == null)
         {
-            if (id <= 0)
-                return BadRequest(new { success = false, message = "El ID debe ser mayor a 0" });
-
-            var tarea = await _tareaService.GetTareaByIdAsync(id);
-            
-            if (tarea == null)
-                return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
-
-            return Ok(new { success = true, data = tarea });
+            return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
         }
-        
-        //get tarea por estado 
-        [HttpGet("estado/{estado}")]
-        public async Task<ActionResult<IEnumerable<TareaDto>>> GetTareasByEstado(EstadoTarea estado)
+        return Ok(new { success = true, message = "Tarea actualizada exitosamente", data = tareaActualizada });
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteTarea(int id)
+    {
+        var userId = GetCurrentUserId();
+        var deleted = await _tareaService.DeleteForUserAsync(id, userId);
+        if (!deleted)
         {
-            if (!Enum.IsDefined(typeof(EstadoTarea), estado))
-                return BadRequest(new { success = false, message = "Estado de tarea inválido" });
-
-            var tareas = await _tareaService.GetTareasByEstadoAsync(estado);
-            return Ok(new { success = true, data = tareas, count = tareas.Count(), estado });
+            return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
         }
-        
-        //crear tarea
-        [HttpPost]
-        public async Task<ActionResult<TareaDto>> CreateTarea([FromBody] CrearTareaDto crearTareaDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage);
-                return BadRequest(new { success = false, message = "Datos inválidos", errors });
-            }
-
-            var tarea = await _tareaService.CreateTareaAsync(crearTareaDto);
-            return CreatedAtAction(
-                nameof(GetTareaById),
-                new { id = tarea.Id },
-                new { success = true, data = tarea, message = "Tarea creada exitosamente" }
-            );
-        }
-        
-        //actualizar tarea 
-        [HttpPut("{id:int}")]
-        public async Task<ActionResult<TareaDto>> UpdateTarea(int id, [FromBody] ActualizarTareaDto actualizarTareaDto)
-        {
-            if (id <= 0)
-                return BadRequest(new { success = false, message = "El ID debe ser mayor a 0" });
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage);
-                return BadRequest(new { success = false, message = "Datos inválidos", errors });
-            }
-
-            var tarea = await _tareaService.UpdateTareaAsync(id, actualizarTareaDto);
-            
-            if (tarea == null)
-                return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
-
-            return Ok(new { success = true, data = tarea, message = "Tarea actualizada exitosamente" });
-        }
-
-        //eliminar tarea
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteTarea(int id)
-        {
-            if (id <= 0)
-                return BadRequest(new { success = false, message = "El ID debe ser mayor a 0" });
-
-            var deleted = await _tareaService.DeleteTareaAsync(id);
-            
-            if (!deleted)
-                return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
-
-            return Ok(new { success = true, message = "Tarea eliminada exitosamente" });
-        }
+        return Ok(new { success = true, message = "Tarea eliminada exitosamente" });
+    }
+    
+    [HttpGet("estados")]
+    [AllowAnonymous] // This endpoint can be public
+    public ActionResult<object> GetEstados()
+    {
+        var estados = _tareaService.GetEstados();
+        return Ok(new { success = true, data = estados });
+    }
+    
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? throw new InvalidOperationException("User ID claim (sub) not found in token.");
+        return int.Parse(userIdClaim);
     }
 }

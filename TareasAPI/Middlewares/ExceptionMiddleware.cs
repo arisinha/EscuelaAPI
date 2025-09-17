@@ -1,46 +1,42 @@
-using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Text.Json;
-using System.Threading.Tasks;
-using System;
 
-namespace TareasAPI.Middlewares
+namespace TareasApi.Middlewares;
+
+public class ExceptionMiddleware
 {
-    public class ExceptionMiddleware
+    private readonly RequestDelegate _next;
+
+    public ExceptionMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
+        _next = next;
+    }
 
-        public ExceptionMiddleware(RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
         {
-            _next = next;
+            await _next(context);
         }
-
-        public async Task InvokeAsync(HttpContext context)
+        catch (Exception ex)
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex);
-            }
+            await HandleExceptionAsync(context, ex);
         }
+    }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+        var response = new
         {
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            context.Response.StatusCode,
+            Message = "Ocurrió un error en el servidor.",
+            Detailed = exception.Message
+        };
 
-            var response = new
-            {
-                StatusCode = context.Response.StatusCode,
-                Message = "Ocurrió un error en el servidor.",
-                Detailed = exception.Message
-            };
-
-            var jsonResponse = JsonSerializer.Serialize(response);
-            return context.Response.WriteAsync(jsonResponse);
-        }
+        var jsonResponse = JsonSerializer.Serialize(response);
+        return context.Response.WriteAsync(jsonResponse);
     }
 }

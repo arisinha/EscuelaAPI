@@ -1,15 +1,13 @@
 using TareasApi.DTOs;
-using TareasApi.Models;
 
-namespace TareasApi.Services.Interfaces
+namespace TareasApi.Services.Interfaces;
+
+public interface ITareaService
 {
-    public interface ITareaService
-    {
-        Task<IEnumerable<TareaDto>> GetAllTareasAsync();
-        Task<TareaDto?> GetTareaByIdAsync(int id);
-        Task<IEnumerable<TareaDto>> GetTareasByEstadoAsync(EstadoTarea estado);
-        Task<TareaDto> CreateTareaAsync(CrearTareaDto crearTareaDto);
-        Task<TareaDto?> UpdateTareaAsync(int id, ActualizarTareaDto actualizarTareaDto);
-        Task<bool> DeleteTareaAsync(int id);
-    }
+    Task<IEnumerable<TareaDto>> GetAllByUserIdAsync(int userId);
+    Task<TareaDto?> GetByIdAndUserIdAsync(int tareaId, int userId);
+    Task<TareaDto> CreateForUserAsync(CrearTareaDto crearTareaDto, int userId);
+    Task<TareaDto?> UpdateForUserAsync(int tareaId, ActualizarTareaDto actualizarTareaDto, int userId);
+    Task<bool> DeleteForUserAsync(int tareaId, int userId);
+    IEnumerable<object> GetEstados();
 }
