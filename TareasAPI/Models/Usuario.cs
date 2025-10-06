@@ -19,6 +19,5 @@ public class Usuario
     [StringLength(150)]
     public required string NombreCompleto { get; set; }
 
-    // Navigation property for the tasks created by this user
     public virtual ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
 }

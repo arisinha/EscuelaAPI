@@ -8,7 +8,7 @@ namespace TareasApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Requires authentication for all endpoints in this controller
+[Authorize] 
 public class TareasController : ControllerBase
 {
     private readonly ITareaService _tareaService;
@@ -86,7 +86,7 @@ public class TareasController : ControllerBase
     }
     
     [HttpGet("estados")]
-    [AllowAnonymous] // This endpoint can be public
+    [AllowAnonymous]
     public ActionResult<object> GetEstados()
     {
         var estados = _tareaService.GetEstados();

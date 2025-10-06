@@ -3,7 +3,6 @@ using TareasApi.Models;
 
 namespace TareasApi.DTOs;
 
-// The main DTO for returning a task (Corrected)
 public record TareaDto(
     int Id,
     string Titulo,
@@ -14,7 +13,6 @@ public record TareaDto(
     UsuarioDto Usuario
 );
 
-// DTO for creating a new task
 public record CrearTareaDto(
     [Required(ErrorMessage = "El título es requerido.")]
     [StringLength(200, ErrorMessage = "El título no puede exceder los 200 caracteres.")]
@@ -24,7 +22,6 @@ public record CrearTareaDto(
     string? Descripcion
 );
 
-// DTO for updating an existing task
 public record ActualizarTareaDto(
     [StringLength(200, ErrorMessage = "El título no puede exceder los 200 caracteres.")]
     string? Titulo,

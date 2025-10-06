@@ -9,7 +9,6 @@ public class TareaService : ITareaService
 {
     private readonly ITareaRepository _tareaRepository;
 
-    // Injects the repository, not the DbContext
     public TareaService(ITareaRepository tareaRepository)
     {
         _tareaRepository = tareaRepository;
@@ -24,7 +23,7 @@ public class TareaService : ITareaService
             UsuarioId = userId,
             Estado = EstadoTarea.Pendiente,
             FechaCreacion = DateTime.UtcNow,
-            Usuario = null! // EF Core will populate this
+            Usuario = null! 
         };
 
         var nuevaTarea = await _tareaRepository.CreateAsync(tarea);
@@ -33,11 +32,10 @@ public class TareaService : ITareaService
 
     public async Task<bool> DeleteForUserAsync(int tareaId, int userId)
     {
-        // First, verify the task belongs to the user
         var tarea = await _tareaRepository.GetByIdAndUserIdAsync(tareaId, userId);
         if (tarea == null)
         {
-            return false; // Not found or not authorized
+            return false; 
         }
 
         return await _tareaRepository.DeleteAsync(tareaId);
@@ -60,10 +58,9 @@ public class TareaService : ITareaService
         var tarea = await _tareaRepository.GetByIdAndUserIdAsync(tareaId, userId);
         if (tarea == null)
         {
-            return null; // Not found or not authorized
+            return null; 
         }
 
-        // Apply updates from DTO
         if (!string.IsNullOrEmpty(dto.Titulo))
             tarea.Titulo = dto.Titulo;
         if (dto.Descripcion != null)
@@ -84,7 +81,6 @@ public class TareaService : ITareaService
             .ToList();
     }
 
-    // Helper method to map Entity to DTO
     private static TareaDto MapTareaToDto(Tarea tarea)
     {
         var usuarioDto = new UsuarioDto(

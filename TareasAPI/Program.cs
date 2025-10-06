@@ -12,28 +12,17 @@ using TareasApi.Services;
 using TareasApi.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// --- Service Registration ---
-
-// Add Controllers
 builder.Services.AddControllers();
-
-// Configure Database Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-
-// Register custom services and repositories
 builder.Services.AddScoped<ITareaRepository, TareaRepository>();
 builder.Services.AddScoped<ITareaService, TareaService>();
-builder.Services.AddScoped<IAuthService, AuthService>(); // Register the new AuthService
-
-// Configure Swagger for API documentation
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tareas API", Version = "v1" });
-    // Add JWT Authentication support to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -55,7 +44,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configure JWT Authentication
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -69,11 +57,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            NameClaimType = "name" // Ensure this matches the claim in the token
+            NameClaimType = "name"
         };
     });
 
-// Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -86,26 +73,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// --- HTTP Request Pipeline Configuration ---
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Use custom middleware
-app.UseExceptionMiddleware(); // Global exception handler first
-
+app.UseExceptionMiddleware(); 
 app.UseHttpsRedirection();
 app.UseCors();
-
-// Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseAuditMiddleware(); // Audit after auth to have user context
-
+app.UseAuditMiddleware(); 
 app.MapControllers();
-
 app.Run();

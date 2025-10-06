@@ -18,7 +18,6 @@ public class TareaRepository : ITareaRepository
     {
         _context.Tareas.Add(tarea);
         await _context.SaveChangesAsync();
-        // Load the related user data after creation
         await _context.Entry(tarea).Reference(t => t.Usuario).LoadAsync();
         return tarea;
     }
@@ -39,7 +38,7 @@ public class TareaRepository : ITareaRepository
     public async Task<IEnumerable<Tarea>> GetAllByUserIdAsync(int userId)
     {
         return await _context.Tareas
-            .Include(t => t.Usuario) // Include related user data
+            .Include(t => t.Usuario)
             .Where(t => t.UsuarioId == userId)
             .OrderByDescending(t => t.FechaCreacion)
             .ToListAsync();
@@ -48,7 +47,7 @@ public class TareaRepository : ITareaRepository
     public async Task<Tarea?> GetByIdAndUserIdAsync(int tareaId, int userId)
     {
         return await _context.Tareas
-            .Include(t => t.Usuario) // Include related user data
+            .Include(t => t.Usuario) 
             .FirstOrDefaultAsync(t => t.Id == tareaId && t.UsuarioId == userId);
     }
 
