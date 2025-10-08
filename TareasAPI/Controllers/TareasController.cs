@@ -23,10 +23,10 @@ public class TareasController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TareaDto>>> GetTareas()
+    public async Task<ActionResult<IEnumerable<TareaDto>>> GetTareas([FromQuery] int? grupoId)
     {
         var userId = GetCurrentUserId();
-        var tareas = await _tareaService.GetAllByUserIdAsync(userId);
+        var tareas = await _tareaService.GetAllByUserIdAsync(userId, grupoId);
         return Ok(new { success = true, count = tareas.Count(), data = tareas });
     }
 

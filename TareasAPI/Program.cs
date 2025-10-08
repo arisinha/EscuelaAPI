@@ -78,48 +78,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
 
+        // Keep only necessary event handlers: handle failures and challenges gracefully.
         options.Events = new JwtBearerEvents
         {
-            OnMessageReceived = context =>
-            {
-                var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
-                var logger = loggerFactory?.CreateLogger("JwtAuth");
-                var auth = context.Request.Headers["Authorization"].ToString();
-                if (string.IsNullOrEmpty(auth))
-                {
-                    logger?.LogWarning("OnMessageReceived: no Authorization header for {Path}", context.Request.Path);
-                }
-                else
-                {
-                    var preview = auth.Length > 80 ? auth.Substring(0, 80) + "..." : auth;
-                    logger?.LogInformation("OnMessageReceived: Authorization header for {Path} -> {Auth}", context.Request.Path, preview);
-                }
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
-                var logger = loggerFactory?.CreateLogger("JwtAuth");
-                // Diagnostic: log token type, issuer and audiences when available. Avoid failing here;
-                // TokenValidationParameters already enforces issuer/audience/lifetime/signing key.
-                try
-                {
-                    if (context.SecurityToken is JwtSecurityToken jwtToken)
-                    {
-                        logger?.LogInformation("OnTokenValidated: token issuer={issuer}, audiences={aud}", jwtToken.Issuer, string.Join(',', jwtToken.Audiences));
-                    }
-                    else
-                    {
-                        logger?.LogInformation("OnTokenValidated: SecurityToken is of type {Type}", context.SecurityToken?.GetType()?.FullName ?? "(null)");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogError(ex, "Error while logging token info in OnTokenValidated");
-                }
-
-                return Task.CompletedTask;
-            },
             OnAuthenticationFailed = async context =>
             {
                 var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
@@ -188,13 +149,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                     logger?.LogWarning("OnChallenge returned 401: error={error} message={message}", error, message);
 
-                    var payload = JsonSerializer.Serialize(new
-                    {
-                        success = false,
-                        error,
-                        message
-                    });
-
+                    var payload = JsonSerializer.Serialize(new { success = false, error, message });
                     await context.Response.WriteAsync(payload);
                 }
             }
@@ -227,4 +182,131 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAuditMiddleware(); 
 app.MapControllers();
+// Apply any pending EF Core migrations at startup so the database schema stays in sync.
+// This is convenient for development and small deployments. If migrations fail, we log and rethrow.
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var db = services.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetService<ILogger<Program>>();
+        logger?.LogError(ex, "An error occurred while migrating the database on startup.");
+        throw;
+    }
+}
+
+// Seed some data for development/testing: a test user and a few grupos
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        // Seed or upsert test user
+        var existingUser = db.Usuarios.FirstOrDefault(u => u.NombreUsuario == "testuser");
+        if (existingUser == null)
+        {
+            var pwHash = BCrypt.Net.BCrypt.HashPassword("P@ssw0rd");
+            db.Usuarios.Add(new TareasApi.Models.Usuario { NombreUsuario = "testuser", NombreCompleto = "Usuario de Prueba", PasswordHash = pwHash });
+            db.SaveChanges();
+        }
+        else
+        {
+            // Ensure the password matches the known test password
+            existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword("P@ssw0rd");
+            db.SaveChanges();
+        }
+
+        // Seed grupos if none exist
+        if (!db.Grupos.Any())
+        {
+            db.Grupos.AddRange(
+                new TareasApi.Models.Grupo { NombreMateria = "Matemáticas", CodigoGrupo = "MATH101" },
+                new TareasApi.Models.Grupo { NombreMateria = "Física", CodigoGrupo = "PHYS101" },
+                new TareasApi.Models.Grupo { NombreMateria = "Historia", CodigoGrupo = "HIST101" }
+            );
+            db.SaveChanges();
+        }
+
+        // Seed up to 2 tareas per usuario for testing with mixed states and dates
+        var gruposList = db.Grupos.ToList();
+        var random = new Random();
+        var possibleStates = new[] { TareasApi.Models.EstadoTarea.Pendiente, TareasApi.Models.EstadoTarea.EnProgreso, TareasApi.Models.EstadoTarea.Completada };
+        foreach (var user in db.Usuarios.ToList())
+        {
+            var existingCount = db.Tareas.Count(t => t.UsuarioId == user.Id);
+            for (int i = existingCount; i < 2; i++)
+            {
+                var grupoId = gruposList.Count > 0 ? gruposList[random.Next(gruposList.Count)].Id : (int?)null;
+                var estado = possibleStates[random.Next(possibleStates.Length)];
+                var createdAt = DateTimeOffset.UtcNow.AddDays(-random.Next(0, 30)).AddHours(-random.Next(0, 24));
+                DateTimeOffset? updatedAt = null;
+                // If completed, usually have an update timestamp; otherwise sometimes have one
+                if (estado == TareasApi.Models.EstadoTarea.Completada || random.NextDouble() < 0.4)
+                {
+                    updatedAt = createdAt.AddDays(random.Next(0, 7)).AddHours(random.Next(0, 24));
+                }
+
+                db.Tareas.Add(new TareasApi.Models.Tarea
+                {
+                    Titulo = $"Tarea seed {i + 1} para {user.NombreUsuario}",
+                    Descripcion = "Tarea creada por seed para pruebas",
+                    UsuarioId = user.Id,
+                    Usuario = user,
+                    GrupoId = grupoId,
+                    Estado = estado,
+                    FechaCreacion = createdAt,
+                    FechaActualizacion = updatedAt
+                });
+            }
+        }
+        db.SaveChanges();
+
+        // Additionally: ensure there are example tasks attached to each Grupo (2 per grupo)
+        var testUser = db.Usuarios.FirstOrDefault(u => u.NombreUsuario == "testuser");
+        if (testUser != null)
+        {
+            foreach (var grupo in db.Grupos.ToList())
+            {
+                var countForGrupo = db.Tareas.Count(t => t.GrupoId == grupo.Id);
+                for (int i = countForGrupo; i < 2; i++)
+                {
+                    // Vary the state: first example pending, second one random
+                    var estado = i == 0 ? TareasApi.Models.EstadoTarea.Pendiente : (random.Next(2) == 0 ? TareasApi.Models.EstadoTarea.EnProgreso : TareasApi.Models.EstadoTarea.Completada);
+                    var createdAt = DateTimeOffset.UtcNow.AddDays(-random.Next(1, 20)).AddHours(-random.Next(0, 24));
+                    DateTimeOffset? updatedAt = null;
+                    if (estado == TareasApi.Models.EstadoTarea.Completada)
+                    {
+                        updatedAt = createdAt.AddDays(random.Next(1, 5)).AddHours(random.Next(0, 24));
+                    }
+
+                    db.Tareas.Add(new TareasApi.Models.Tarea
+                    {
+                        Titulo = $"Ejemplo {grupo.CodigoGrupo} - {i + 1}",
+                        Descripcion = $"Tarea de ejemplo para el grupo {grupo.NombreMateria}",
+                        UsuarioId = testUser.Id,
+                        Usuario = testUser,
+                        GrupoId = grupo.Id,
+                        Estado = estado,
+                        FechaCreacion = createdAt,
+                        FechaActualizacion = updatedAt
+                    });
+                }
+            }
+            db.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetService<ILogger<Program>>();
+        logger?.LogError(ex, "An error occurred while seeding the database.");
+        // don't rethrow - seeding failure shouldn't block the app from starting in dev
+    }
+}
+
 app.Run();

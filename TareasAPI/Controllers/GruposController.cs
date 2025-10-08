@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TareasApi.DTOs;
 using TareasApi.Models;
 using TareasApi.Repositories.Interfaces;
@@ -10,10 +11,12 @@ namespace TareasApi.Controllers;
 public class GruposController : ControllerBase
 {
     private readonly IGrupoRepository _repo;
+    private readonly TareasApi.Services.Interfaces.ITareaService _tareaService;
 
-    public GruposController(IGrupoRepository repo)
+    public GruposController(IGrupoRepository repo, TareasApi.Services.Interfaces.ITareaService tareaService)
     {
         _repo = repo;
+        _tareaService = tareaService;
     }
 
     [HttpGet]
@@ -29,6 +32,25 @@ public class GruposController : ControllerBase
         var g = await _repo.GetByIdAsync(id);
         if (g == null) return NotFound();
         return Ok(new GrupoDto(g.Id, g.NombreMateria, g.CodigoGrupo));
+    }
+
+    // GET /api/Grupos/{id}/tareas - requiere autenticación
+    [HttpGet("{id:int}/tareas")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> GetTareasPorGrupo(int id)
+    {
+        // Ensure group exists
+        var grupo = await _repo.GetByIdAsync(id);
+        if (grupo == null) return NotFound(new { success = false, message = "Grupo no encontrado" });
+
+        // Extract user id from claims (like in TareasController)
+        var userIdClaim = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
+                         ?? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim);
+
+        var tareas = await _tareaService.GetAllByUserIdAsync(userId, id);
+        return Ok(new { success = true, count = tareas.Count(), data = tareas });
     }
 
     [HttpPost]
