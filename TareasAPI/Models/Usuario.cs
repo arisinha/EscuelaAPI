@@ -20,4 +20,15 @@ public class Usuario
     public required string NombreCompleto { get; set; }
 
     public virtual ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
+
+    [Required]
+    [StringLength(20)]
+    public required string Rol { get; set; }
+
+    // Materias en las que el usuario está inscrito (como alumno)
+    public virtual ICollection<UsuarioMateria> MateriasInscritas { get; set; } = new List<UsuarioMateria>();
+
+    // Materias que el usuario imparte (como maestro)
+    [System.ComponentModel.DataAnnotations.Schema.InverseProperty("Maestro")]
+    public virtual ICollection<Materia> MateriasImpartidas { get; set; } = new List<Materia>();
 }

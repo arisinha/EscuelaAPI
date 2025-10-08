@@ -7,6 +7,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Tarea> Tareas { get; set; }
+    public DbSet<Materia> Materias { get; set; }
+    public DbSet<UsuarioMateria> UsuarioMaterias { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,6 +22,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(u => u.NombreUsuario).IsRequired().HasMaxLength(50).HasColumnName("nombre_usuario");
             entity.Property(u => u.NombreCompleto).IsRequired().HasMaxLength(150).HasColumnName("nombre_completo");
             entity.Property(u => u.PasswordHash).IsRequired().HasColumnName("contrasena");
+
+            entity.HasMany(u => u.MateriasImpartidas)
+                  .WithOne(m => m.Maestro)
+                  .HasForeignKey(m => m.MaestroId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
         
         modelBuilder.Entity<Tarea>(entity =>
@@ -38,5 +45,25 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(t => t.UsuarioId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<Materia>(entity =>
+        {
+            entity.ToTable("Materias");
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Nombre).IsRequired().HasMaxLength(100);
+            entity.Property(m => m.Descripcion).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<UsuarioMateria>()
+            .HasKey(um => new { um.UsuarioId, um.MateriaId });
+
+        modelBuilder.Entity<UsuarioMateria>()
+            .HasOne(um => um.Usuario)
+            .WithMany(u => u.MateriasInscritas)
+            .HasForeignKey(um => um.UsuarioId);
+
+        modelBuilder.Entity<UsuarioMateria>()
+            .HasOne(um => um.Materia)
+            .WithMany(m => m.AlumnosInscritos)
+            .HasForeignKey(um => um.MateriaId);
     }
 }
