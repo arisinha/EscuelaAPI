@@ -1,7 +1,6 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
-using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Linq;
 using System.Text;
@@ -17,17 +16,11 @@ using TareasApi.Repositories;
 using TareasApi.Repositories.Interfaces;
 using TareasApi.Services;
 using TareasApi.Services.Interfaces;
-using TareasApi.Helpers;
+ 
 
 var builder = WebApplication.CreateBuilder(args);
-// Ensure JSON serializes DateTime values in ISO 8601 round-trip format with timezone ("o")
-builder.Services.AddControllers().AddJsonOptions(opts =>
-{
-    opts.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
-    opts.JsonSerializerOptions.Converters.Add(new NullableDateTimeJsonConverter());
-});
+builder.Services.AddControllers();
 
-// Converters implemented in Helpers/JsonConverters.cs
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
@@ -174,138 +167,30 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseExceptionMiddleware(); 
+app.UseExceptionMiddleware();
 app.UseHttpsRedirection();
 app.UseCors();
-
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAuditMiddleware(); 
 app.MapControllers();
-// Apply any pending EF Core migrations at startup so the database schema stays in sync.
-// This is convenient for development and small deployments. If migrations fail, we log and rethrow.
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
-    var services = scope.ServiceProvider;
-    try
+    // Apply any pending EF Core migrations at startup so the database schema stays in sync.
+    // This is convenient for development. In production we prefer manual migration application.
+    using (var scope = app.Services.CreateScope())
     {
-        var db = services.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetService<ILogger<Program>>();
-        logger?.LogError(ex, "An error occurred while migrating the database on startup.");
-        throw;
-    }
-}
-
-// Seed some data for development/testing: a test user and a few grupos
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var db = services.GetRequiredService<ApplicationDbContext>();
-    try
-    {
-        // Seed or upsert test user
-        var existingUser = db.Usuarios.FirstOrDefault(u => u.NombreUsuario == "testuser");
-        if (existingUser == null)
+        var services = scope.ServiceProvider;
+        try
         {
-            var pwHash = BCrypt.Net.BCrypt.HashPassword("P@ssw0rd");
-            db.Usuarios.Add(new TareasApi.Models.Usuario { NombreUsuario = "testuser", NombreCompleto = "Usuario de Prueba", PasswordHash = pwHash });
-            db.SaveChanges();
+            var db = services.GetRequiredService<ApplicationDbContext>();
+            db.Database.Migrate();
         }
-        else
+        catch (Exception ex)
         {
-            // Ensure the password matches the known test password
-            existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword("P@ssw0rd");
-            db.SaveChanges();
+            var logger = services.GetService<ILogger<Program>>();
+            logger?.LogError(ex, "An error occurred while migrating the database on startup.");
+            throw;
         }
-
-        // Seed grupos if none exist
-        if (!db.Grupos.Any())
-        {
-            db.Grupos.AddRange(
-                new TareasApi.Models.Grupo { NombreMateria = "Matemáticas", CodigoGrupo = "MATH101" },
-                new TareasApi.Models.Grupo { NombreMateria = "Física", CodigoGrupo = "PHYS101" },
-                new TareasApi.Models.Grupo { NombreMateria = "Historia", CodigoGrupo = "HIST101" }
-            );
-            db.SaveChanges();
-        }
-
-        // Seed up to 2 tareas per usuario for testing with mixed states and dates
-        var gruposList = db.Grupos.ToList();
-        var random = new Random();
-        var possibleStates = new[] { TareasApi.Models.EstadoTarea.Pendiente, TareasApi.Models.EstadoTarea.EnProgreso, TareasApi.Models.EstadoTarea.Completada };
-        foreach (var user in db.Usuarios.ToList())
-        {
-            var existingCount = db.Tareas.Count(t => t.UsuarioId == user.Id);
-            for (int i = existingCount; i < 2; i++)
-            {
-                var grupoId = gruposList.Count > 0 ? gruposList[random.Next(gruposList.Count)].Id : (int?)null;
-                var estado = possibleStates[random.Next(possibleStates.Length)];
-                var createdAt = DateTimeOffset.UtcNow.AddDays(-random.Next(0, 30)).AddHours(-random.Next(0, 24));
-                DateTimeOffset? updatedAt = null;
-                // If completed, usually have an update timestamp; otherwise sometimes have one
-                if (estado == TareasApi.Models.EstadoTarea.Completada || random.NextDouble() < 0.4)
-                {
-                    updatedAt = createdAt.AddDays(random.Next(0, 7)).AddHours(random.Next(0, 24));
-                }
-
-                db.Tareas.Add(new TareasApi.Models.Tarea
-                {
-                    Titulo = $"Tarea seed {i + 1} para {user.NombreUsuario}",
-                    Descripcion = "Tarea creada por seed para pruebas",
-                    UsuarioId = user.Id,
-                    Usuario = user,
-                    GrupoId = grupoId,
-                    Estado = estado,
-                    FechaCreacion = createdAt,
-                    FechaActualizacion = updatedAt
-                });
-            }
-        }
-        db.SaveChanges();
-
-        // Additionally: ensure there are example tasks attached to each Grupo (2 per grupo)
-        var testUser = db.Usuarios.FirstOrDefault(u => u.NombreUsuario == "testuser");
-        if (testUser != null)
-        {
-            foreach (var grupo in db.Grupos.ToList())
-            {
-                var countForGrupo = db.Tareas.Count(t => t.GrupoId == grupo.Id);
-                for (int i = countForGrupo; i < 2; i++)
-                {
-                    // Vary the state: first example pending, second one random
-                    var estado = i == 0 ? TareasApi.Models.EstadoTarea.Pendiente : (random.Next(2) == 0 ? TareasApi.Models.EstadoTarea.EnProgreso : TareasApi.Models.EstadoTarea.Completada);
-                    var createdAt = DateTimeOffset.UtcNow.AddDays(-random.Next(1, 20)).AddHours(-random.Next(0, 24));
-                    DateTimeOffset? updatedAt = null;
-                    if (estado == TareasApi.Models.EstadoTarea.Completada)
-                    {
-                        updatedAt = createdAt.AddDays(random.Next(1, 5)).AddHours(random.Next(0, 24));
-                    }
-
-                    db.Tareas.Add(new TareasApi.Models.Tarea
-                    {
-                        Titulo = $"Ejemplo {grupo.CodigoGrupo} - {i + 1}",
-                        Descripcion = $"Tarea de ejemplo para el grupo {grupo.NombreMateria}",
-                        UsuarioId = testUser.Id,
-                        Usuario = testUser,
-                        GrupoId = grupo.Id,
-                        Estado = estado,
-                        FechaCreacion = createdAt,
-                        FechaActualizacion = updatedAt
-                    });
-                }
-            }
-            db.SaveChanges();
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetService<ILogger<Program>>();
-        logger?.LogError(ex, "An error occurred while seeding the database.");
-        // don't rethrow - seeding failure shouldn't block the app from starting in dev
     }
 }
 
