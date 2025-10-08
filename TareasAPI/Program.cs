@@ -213,68 +213,8 @@ app.UseExceptionMiddleware();
 app.UseHttpsRedirection();
 app.UseCors();
 
-// Diagnostic middleware: log Authorization header received (before authentication)
-app.Use(async (context, next) =>
-{
-    var auth = context.Request.Headers["Authorization"].ToString();
-    if (string.IsNullOrEmpty(auth))
-    {
-        app.Logger.LogWarning("No Authorization header on: {Path}", context.Request.Path);
-    }
-    else
-    {
-        var preview = auth.Length > 80 ? auth.Substring(0, 80) + "..." : auth;
-        app.Logger.LogInformation("Authorization header present on: {Path} -> {Auth}", context.Request.Path, preview);
-    }
-    await next();
-});
-
 app.UseAuthentication();
 app.UseAuthorization();
-// Diagnostic middleware after auth: log AuthenticateAsync result (helps explain 401s)
-app.Use(async (context, next) =>
-{
-    var logger = app.Logger;
-    try
-    {
-        var authResult = await context.AuthenticateAsync();
-        logger.LogInformation("AuthenticateAsync: Succeeded={Succeeded} Scheme={Scheme} IsAuthenticated={IsAuthenticated} Failure={Failure}",
-            authResult.Succeeded,
-            authResult.Ticket?.AuthenticationScheme,
-            authResult.Principal?.Identity?.IsAuthenticated,
-            authResult.Failure?.Message);
-
-        if (authResult.Succeeded && authResult.Principal != null)
-        {
-            var name = authResult.Principal.Identity?.Name ?? "(no name)";
-            logger.LogInformation("Authenticated principal name: {Name}; claims: {Claims}", name,
-                string.Join(',', authResult.Principal.Claims.Select(c => c.Type + "=" + c.Value)));
-        }
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Exception while calling AuthenticateAsync");
-    }
-
-    await next();
-});
-
-// Lightweight debug endpoint to inspect HttpContext.User after authentication
-app.MapGet("/debug/whoami", (HttpContext http) =>
-{
-    var user = http.User;
-    if (user?.Identity?.IsAuthenticated == true)
-    {
-        return Results.Json(new
-        {
-            authenticated = true,
-            name = user.Identity?.Name,
-            claims = user.Claims.Select(c => new { c.Type, c.Value })
-        });
-    }
-
-    return Results.Json(new { authenticated = false });
-});
 app.UseAuditMiddleware(); 
 app.MapControllers();
 app.Run();
