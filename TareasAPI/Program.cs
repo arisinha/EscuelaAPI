@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
 using TareasApi.Data;
 using TareasApi.Middlewares;
 using TareasApi.Repositories;
@@ -192,6 +193,30 @@ if (app.Environment.IsDevelopment())
             throw;
         }
     }
+
+    // Development-only endpoint to reset a user's password by hashing a new password.
+    // Use to migrate users that still have plaintext passwords stored.
+    app.MapPost("/dev/users/reset-password", async (
+        [FromServices] ApplicationDbContext db,
+        [FromBody] ResetPasswordRequest req) =>
+    {
+        if (req is null || string.IsNullOrWhiteSpace(req.Username) || string.IsNullOrWhiteSpace(req.NewPassword))
+        {
+            return Results.BadRequest(new { success = false, message = "username and newPassword are required" });
+        }
+
+        var user = await db.Usuarios.FirstOrDefaultAsync(u => u.NombreUsuario == req.Username);
+        if (user == null)
+        {
+            return Results.NotFound(new { success = false, message = "User not found" });
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
+        await db.SaveChangesAsync();
+        return Results.Ok(new { success = true, message = $"Password reset for {req.Username}" });
+    });
 }
 
 app.Run();
+
+public record ResetPasswordRequest(string Username, string NewPassword);
