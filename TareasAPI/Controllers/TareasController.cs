@@ -14,10 +14,12 @@ namespace TareasApi.Controllers;
 public class TareasController : ControllerBase
 {
     private readonly ITareaService _tareaService;
+    private readonly TareasApi.Repositories.Interfaces.IGrupoRepository _grupoRepository;
 
-    public TareasController(ITareaService tareaService)
+    public TareasController(ITareaService tareaService, TareasApi.Repositories.Interfaces.IGrupoRepository grupoRepository)
     {
         _tareaService = tareaService;
+        _grupoRepository = grupoRepository;
     }
 
     [HttpGet]
@@ -85,6 +87,28 @@ public class TareasController : ControllerBase
             return NotFound(new { success = false, message = $"No se encontró la tarea con ID {id}" });
         }
         return Ok(new { success = true, message = "Tarea eliminada exitosamente" });
+    }
+
+    // PATCH: /api/Tareas/{id}/grupo
+    [HttpPatch("{id:int}/grupo")]
+    public async Task<IActionResult> AssignGrupo(int id, [FromBody] int? grupoId)
+    {
+        var userId = GetCurrentUserId();
+        var tarea = await _tareaService.GetByIdAndUserIdAsync(id, userId);
+        if (tarea == null) return NotFound(new { success = false, message = "Tarea no encontrada" });
+
+        // If grupoId provided, ensure it exists
+        if (grupoId.HasValue)
+        {
+            var g = await _grupoRepository.GetByIdAsync(grupoId.Value);
+            if (g == null) return BadRequest(new { success = false, message = "Grupo no existe" });
+        }
+
+        // Build update DTO with only grupoId
+        var updateDto = new ActualizarTareaDto(null, null, null, grupoId);
+        var updated = await _tareaService.UpdateForUserAsync(id, updateDto, userId);
+        if (updated == null) return StatusCode(500, new { success = false, message = "No se pudo actualizar la tarea" });
+        return Ok(new { success = true, data = updated });
     }
     
     [HttpGet("estados")]

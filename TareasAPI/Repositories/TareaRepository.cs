@@ -35,11 +35,18 @@ public class TareaRepository : ITareaRepository
         return true;
     }
 
-    public async Task<IEnumerable<Tarea>> GetAllByUserIdAsync(int userId)
+    public async Task<IEnumerable<Tarea>> GetAllByUserIdAsync(int userId, int? grupoId = null)
     {
-        return await _context.Tareas
+        var query = _context.Tareas
             .Include(t => t.Usuario)
-            .Where(t => t.UsuarioId == userId)
+            .Where(t => t.UsuarioId == userId);
+
+        if (grupoId.HasValue)
+        {
+            query = query.Where(t => t.GrupoId == grupoId.Value);
+        }
+
+        return await query
             .OrderByDescending(t => t.FechaCreacion)
             .ToListAsync();
     }

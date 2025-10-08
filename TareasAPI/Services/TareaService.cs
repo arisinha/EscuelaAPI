@@ -22,8 +22,9 @@ public class TareaService : ITareaService
             Descripcion = crearTareaDto.Descripcion,
             UsuarioId = userId,
             Estado = EstadoTarea.Pendiente,
-            FechaCreacion = DateTime.UtcNow,
-            Usuario = null! 
+            FechaCreacion = DateTimeOffset.UtcNow,
+            Usuario = null!,
+            GrupoId = crearTareaDto.GrupoId
         };
 
         var nuevaTarea = await _tareaRepository.CreateAsync(tarea);
@@ -41,9 +42,9 @@ public class TareaService : ITareaService
         return await _tareaRepository.DeleteAsync(tareaId);
     }
 
-    public async Task<IEnumerable<TareaDto>> GetAllByUserIdAsync(int userId)
+    public async Task<IEnumerable<TareaDto>> GetAllByUserIdAsync(int userId, int? grupoId = null)
     {
-        var tareas = await _tareaRepository.GetAllByUserIdAsync(userId);
+        var tareas = await _tareaRepository.GetAllByUserIdAsync(userId, grupoId);
         return tareas.Select(MapTareaToDto);
     }
 
@@ -67,8 +68,10 @@ public class TareaService : ITareaService
             tarea.Descripcion = dto.Descripcion;
         if (dto.Estado.HasValue)
             tarea.Estado = dto.Estado.Value;
+        if (dto.GrupoId.HasValue)
+            tarea.GrupoId = dto.GrupoId.Value;
 
-        tarea.FechaActualizacion = DateTime.UtcNow;
+        tarea.FechaActualizacion = DateTimeOffset.UtcNow;
 
         var tareaActualizada = await _tareaRepository.UpdateAsync(tarea);
         return tareaActualizada == null ? null : MapTareaToDto(tareaActualizada);
@@ -96,7 +99,8 @@ public class TareaService : ITareaService
             tarea.Estado.ToString(),
             tarea.FechaCreacion,
             tarea.FechaActualizacion,
-            usuarioDto
+            usuarioDto,
+            tarea.GrupoId
         );
     }
 }

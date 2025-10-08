@@ -18,9 +18,12 @@ public class Tarea
     [Required]
     public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
 
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset FechaCreacion { get; set; } = DateTimeOffset.UtcNow;
 
-    public DateTime? FechaActualizacion { get; set; }
+    public DateTimeOffset? FechaActualizacion { get; set; }
+
+    // Optional association to Grupo
+    public int? GrupoId { get; set; }
 
     [Column("usuario_id")]
     public int UsuarioId { get; set; }

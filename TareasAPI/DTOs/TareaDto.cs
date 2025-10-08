@@ -8,9 +8,10 @@ public record TareaDto(
     string Titulo,
     string? Descripcion,
     string Estado,
-    DateTime FechaCreacion,
-    DateTime? FechaActualizacion,
-    UsuarioDto Usuario
+    DateTimeOffset FechaCreacion,
+    DateTimeOffset? FechaActualizacion,
+    UsuarioDto Usuario,
+    int? GrupoId
 );
 
 public record CrearTareaDto(
@@ -20,6 +21,8 @@ public record CrearTareaDto(
 
     [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
     string? Descripcion
+    ,
+    int? GrupoId
 );
 
 public record ActualizarTareaDto(
@@ -30,4 +33,6 @@ public record ActualizarTareaDto(
     string? Descripcion,
 
     EstadoTarea? Estado
+    ,
+    int? GrupoId
 );

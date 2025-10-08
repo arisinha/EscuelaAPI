@@ -1,6 +1,7 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Linq;
 using System.Text;
@@ -16,15 +17,24 @@ using TareasApi.Repositories;
 using TareasApi.Repositories.Interfaces;
 using TareasApi.Services;
 using TareasApi.Services.Interfaces;
+using TareasApi.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
+// Ensure JSON serializes DateTime values in ISO 8601 round-trip format with timezone ("o")
+builder.Services.AddControllers().AddJsonOptions(opts =>
+{
+    opts.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+    opts.JsonSerializerOptions.Converters.Add(new NullableDateTimeJsonConverter());
+});
+
+// Converters implemented in Helpers/JsonConverters.cs
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 builder.Services.AddScoped<ITareaRepository, TareaRepository>();
 builder.Services.AddScoped<ITareaService, TareaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IGrupoRepository, GrupoRepository>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
