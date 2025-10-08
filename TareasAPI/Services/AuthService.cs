@@ -14,11 +14,13 @@ public class AuthService : IAuthService
 {
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthService>? _logger;
 
-    public AuthService(ApplicationDbContext context, IConfiguration config)
+    public AuthService(ApplicationDbContext context, IConfiguration config, ILogger<AuthService>? logger = null)
     {
         _context = context;
         _config = config;
+        _logger = logger;
     }
 
     public async Task<AuthResponse?> AuthenticateAsync(LoginRequest loginRequest)
@@ -26,10 +28,27 @@ public class AuthService : IAuthService
         var usuario = await _context.Usuarios
             .FirstOrDefaultAsync(u => u.NombreUsuario == loginRequest.NombreUsuario);
 
-        if (usuario == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuario.PasswordHash))
-        {
+        if (usuario == null)
             return null; // Invalid credentials
+
+        // Protect against malformed or legacy password hashes causing runtime exceptions
+        if (string.IsNullOrWhiteSpace(usuario.PasswordHash))
+            return null;
+
+        bool verified;
+        try
+        {
+            verified = BCrypt.Net.BCrypt.Verify(loginRequest.Password, usuario.PasswordHash);
         }
+        catch (Exception ex)
+        {
+            // If the stored hash is invalid/corrupt (e.g., wrong format), treat as invalid credentials.
+            _logger?.LogWarning(ex, "Password verification threw for user {User}", loginRequest.NombreUsuario);
+            return null;
+        }
+
+        if (!verified)
+            return null; // Invalid credentials
 
         var token = GenerateJwtToken(usuario);
         var usuarioDto = new UsuarioDto(usuario.Id, usuario.NombreUsuario, usuario.NombreCompleto);
