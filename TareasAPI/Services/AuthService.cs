@@ -35,6 +35,31 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(usuario.PasswordHash))
             return null;
 
+        // If the stored value is not a valid BCrypt hash, attempt a migration from plaintext safely.
+        if (!IsLikelyBcryptHash(usuario.PasswordHash))
+        {
+            if (usuario.PasswordHash == loginRequest.Password)
+            {
+                try
+                {
+                    var newHash = BCrypt.Net.BCrypt.HashPassword(loginRequest.Password);
+                    usuario.PasswordHash = newHash;
+                    await _context.SaveChangesAsync();
+                    // proceed to token issuance below
+                }
+                catch (Exception saveEx)
+                {
+                    _logger?.LogError(saveEx, "Failed to migrate plaintext password for user {User}", loginRequest.NombreUsuario);
+                    return null;
+                }
+            }
+            else
+            {
+                _logger?.LogInformation("User {User} has a non-bcrypt password format that doesn't match input. Rejecting login.", loginRequest.NombreUsuario);
+                return null;
+            }
+        }
+
         bool verified;
         try
         {
@@ -42,7 +67,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            // If the stored hash is invalid/corrupt (e.g., wrong format), treat as invalid credentials.
+            // If Verify throws despite hash looking valid, treat as invalid credentials without rethrowing.
             _logger?.LogWarning(ex, "Password verification threw for user {User}", loginRequest.NombreUsuario);
             return null;
         }
@@ -79,5 +104,13 @@ public class AuthService : IAuthService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
+    }
+
+    private static bool IsLikelyBcryptHash(string? hash)
+    {
+        if (string.IsNullOrWhiteSpace(hash)) return false;
+        // Typical bcrypt hashes are 60 chars and start with $2a$, $2b$, or $2y$
+        if (hash.Length < 55 || hash.Length > 80) return false; // be tolerant but narrow
+        return hash.StartsWith("$2a$") || hash.StartsWith("$2b$") || hash.StartsWith("$2y$");
     }
 }
