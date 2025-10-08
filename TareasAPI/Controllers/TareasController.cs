@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TareasApi.DTOs;
 using TareasApi.Services.Interfaces;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace TareasApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] 
+
 public class TareasController : ControllerBase
 {
     private readonly ITareaService _tareaService;
@@ -95,8 +97,12 @@ public class TareasController : ControllerBase
     
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                          ?? throw new InvalidOperationException("User ID claim (sub) not found in token.");
+        // Accept either the JWT 'sub' claim or the standard NameIdentifier claim which may be mapped by the
+        // token handler depending on inbound claim mapping settings.
+        var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                        ?? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                        ?? throw new InvalidOperationException("User ID claim (sub or nameidentifier) not found in token.");
+
         return int.Parse(userIdClaim);
-    }
+    }   
 }

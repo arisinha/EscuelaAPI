@@ -26,6 +26,13 @@ public class ExceptionMiddleware
 
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        // If the response has already started, we can't modify headers or write a new body.
+        if (context.Response.HasStarted)
+        {
+            // Let the server/logging handle it; just return completed task.
+            return Task.CompletedTask;
+        }
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 

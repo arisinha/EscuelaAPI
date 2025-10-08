@@ -1,9 +1,15 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Threading.Tasks;
+using System.Text.Json;
+using System.Linq;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Logging;
 using TareasApi.Data;
 using TareasApi.Middlewares;
 using TareasApi.Repositories;
@@ -57,7 +63,131 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            NameClaimType = "name"
+            NameClaimType = JwtRegisteredClaimNames.Sub,
+            // Remove default clock skew so expiration is strict
+            ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+                var logger = loggerFactory?.CreateLogger("JwtAuth");
+                var auth = context.Request.Headers["Authorization"].ToString();
+                if (string.IsNullOrEmpty(auth))
+                {
+                    logger?.LogWarning("OnMessageReceived: no Authorization header for {Path}", context.Request.Path);
+                }
+                else
+                {
+                    var preview = auth.Length > 80 ? auth.Substring(0, 80) + "..." : auth;
+                    logger?.LogInformation("OnMessageReceived: Authorization header for {Path} -> {Auth}", context.Request.Path, preview);
+                }
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+                var logger = loggerFactory?.CreateLogger("JwtAuth");
+                // Diagnostic: log token type, issuer and audiences when available. Avoid failing here;
+                // TokenValidationParameters already enforces issuer/audience/lifetime/signing key.
+                try
+                {
+                    if (context.SecurityToken is JwtSecurityToken jwtToken)
+                    {
+                        logger?.LogInformation("OnTokenValidated: token issuer={issuer}, audiences={aud}", jwtToken.Issuer, string.Join(',', jwtToken.Audiences));
+                    }
+                    else
+                    {
+                        logger?.LogInformation("OnTokenValidated: SecurityToken is of type {Type}", context.SecurityToken?.GetType()?.FullName ?? "(null)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, "Error while logging token info in OnTokenValidated");
+                }
+
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = async context =>
+            {
+                var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+                var logger = loggerFactory?.CreateLogger("JwtAuth");
+                var reason = context.Exception?.GetType().Name ?? "AuthenticationFailed";
+                logger?.LogError(context.Exception, "Authentication failed: {reason}", reason);
+
+                if (context.Exception is SecurityTokenExpiredException)
+                {
+                    // If response hasn't started we can add header; otherwise skip.
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Response.Headers.Append("Token-Expired", "true");
+                    }
+                }
+
+                // If client expects JSON, return a JSON body with the error reason
+                var acceptHeader = context.Request.Headers["Accept"].ToString();
+                if (!string.IsNullOrEmpty(acceptHeader) && acceptHeader.Contains("application/json"))
+                {
+                    // Only write if the response hasn't started yet.
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Response.ContentType = "application/json";
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        var payload = JsonSerializer.Serialize(new
+                        {
+                            success = false,
+                            error = reason,
+                            message = context.Exception?.Message
+                        });
+                        await context.Response.WriteAsync(payload);
+                    }
+                }
+
+                // Do not call context.Fail here because we've written the response.
+                // This allows the normal pipeline to finish.
+            },
+            OnChallenge = async context =>
+            {
+                var loggerFactory = context.HttpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+                var logger = loggerFactory?.CreateLogger("JwtAuth");
+
+                // If a response has already started, let the default handling proceed
+                if (context.Response.HasStarted)
+                {
+                    logger?.LogWarning("OnChallenge: response has already started");
+                    return;
+                }
+
+                // Prevent the default challenge response and write JSON only if allowed
+                context.HandleResponse();
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
+
+                    // Determine error code and message
+                    var error = context.Error ?? "invalid_token";
+                    var message = context.ErrorDescription ?? context.AuthenticateFailure?.Message ?? "Unauthorized";
+
+                    if (context.AuthenticateFailure is SecurityTokenExpiredException)
+                    {
+                        context.Response.Headers.Append("Token-Expired", "true");
+                    }
+
+                    logger?.LogWarning("OnChallenge returned 401: error={error} message={message}", error, message);
+
+                    var payload = JsonSerializer.Serialize(new
+                    {
+                        success = false,
+                        error,
+                        message
+                    });
+
+                    await context.Response.WriteAsync(payload);
+                }
+            }
         };
     });
 
@@ -82,8 +212,69 @@ if (app.Environment.IsDevelopment())
 app.UseExceptionMiddleware(); 
 app.UseHttpsRedirection();
 app.UseCors();
+
+// Diagnostic middleware: log Authorization header received (before authentication)
+app.Use(async (context, next) =>
+{
+    var auth = context.Request.Headers["Authorization"].ToString();
+    if (string.IsNullOrEmpty(auth))
+    {
+        app.Logger.LogWarning("No Authorization header on: {Path}", context.Request.Path);
+    }
+    else
+    {
+        var preview = auth.Length > 80 ? auth.Substring(0, 80) + "..." : auth;
+        app.Logger.LogInformation("Authorization header present on: {Path} -> {Auth}", context.Request.Path, preview);
+    }
+    await next();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
+// Diagnostic middleware after auth: log AuthenticateAsync result (helps explain 401s)
+app.Use(async (context, next) =>
+{
+    var logger = app.Logger;
+    try
+    {
+        var authResult = await context.AuthenticateAsync();
+        logger.LogInformation("AuthenticateAsync: Succeeded={Succeeded} Scheme={Scheme} IsAuthenticated={IsAuthenticated} Failure={Failure}",
+            authResult.Succeeded,
+            authResult.Ticket?.AuthenticationScheme,
+            authResult.Principal?.Identity?.IsAuthenticated,
+            authResult.Failure?.Message);
+
+        if (authResult.Succeeded && authResult.Principal != null)
+        {
+            var name = authResult.Principal.Identity?.Name ?? "(no name)";
+            logger.LogInformation("Authenticated principal name: {Name}; claims: {Claims}", name,
+                string.Join(',', authResult.Principal.Claims.Select(c => c.Type + "=" + c.Value)));
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Exception while calling AuthenticateAsync");
+    }
+
+    await next();
+});
+
+// Lightweight debug endpoint to inspect HttpContext.User after authentication
+app.MapGet("/debug/whoami", (HttpContext http) =>
+{
+    var user = http.User;
+    if (user?.Identity?.IsAuthenticated == true)
+    {
+        return Results.Json(new
+        {
+            authenticated = true,
+            name = user.Identity?.Name,
+            claims = user.Claims.Select(c => new { c.Type, c.Value })
+        });
+    }
+
+    return Results.Json(new { authenticated = false });
+});
 app.UseAuditMiddleware(); 
 app.MapControllers();
 app.Run();
