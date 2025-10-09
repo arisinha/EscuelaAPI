@@ -159,10 +159,20 @@ struct Tarea: Codable, Identifiable, Hashable {
 }
 
 // Refleja el modelo 'Usuario' de C#.
-struct Usuario: Codable, Identifiable {
+struct Usuario: Codable, Identifiable, Hashable {
     let id: Int
     let nombreUsuario: String
     let nombreCompleto: String
+    
+    // Implementación de Hashable
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    // Implementación de Equatable
+    static func == (lhs: Usuario, rhs: Usuario) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 // Modelos para entregas y calificaciones
@@ -223,6 +233,16 @@ struct Entrega: Codable, Identifiable, Hashable {
     
     var estaCalificada: Bool {
         return calificacion != nil
+    }
+    
+    // Implementación de Hashable - solo usar el ID único
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    // Implementación de Equatable - comparar por ID
+    static func == (lhs: Entrega, rhs: Entrega) -> Bool {
+        return lhs.id == rhs.id
     }
 }
 
