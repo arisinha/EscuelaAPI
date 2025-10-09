@@ -1,124 +1,151 @@
 import SwiftUI
 import PhotosUI
 
-struct ImagePickerView: UIViewControllerRepresentable {
+struct ImagePickerView: View {
+    let onImageSelected: (UIImage?) -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var showingCamera = false
+    @State private var showingPhotoLibrary = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Seleccionar imagen")
+                .font(.headline)
+                .padding()
+            
+            VStack(spacing: 16) {
+                Button(action: {
+                    showingCamera = true
+                }) {
+                    HStack {
+                        Image(systemName: "camera")
+                            .font(.title2)
+                        Text("Cámara")
+                            .font(.headline)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                
+                Button(action: {
+                    showingPhotoLibrary = true
+                }) {
+                    HStack {
+                        Image(systemName: "photo")
+                            .font(.title2)
+                        Text("Galería")
+                            .font(.headline)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                
+                Button(action: {
+                    onImageSelected(nil)
+                    dismiss()
+                }) {
+                    Text("Cancelar")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+            }
+            .padding(.horizontal)
+            
+            Spacer()
+        }
+        .sheet(isPresented: $showingCamera) {
+            CameraPickerView { image in
+                onImageSelected(image)
+                dismiss()
+            }
+        }
+        .sheet(isPresented: $showingPhotoLibrary) {
+            PhotoLibraryPickerView { image in
+                onImageSelected(image)
+                dismiss()
+            }
+        }
+    }
+}
+
+// Vista wrapper para la cámara
+struct CameraPickerView: UIViewControllerRepresentable {
     let onImageSelected: (UIImage?) -> Void
     
-    func makeUIViewController(context: Context) -> UIViewController {
-        let actionSheet = UIAlertController(title: "Seleccionar imagen", message: nil, preferredStyle: .actionSheet)
-        
-        // Opción de cámara
-        let cameraAction = UIAlertAction(title: "Cámara", style: .default) { _ in
-            let camera = CameraViewController { image in
-                onImageSelected(image)
-            }
-            context.coordinator.presentCamera(camera)
-        }
-        
-        // Opción de galería
-        let galleryAction = UIAlertAction(title: "Galería", style: .default) { _ in
-            let gallery = PhotoLibraryViewController { image in
-                onImageSelected(image)
-            }
-            context.coordinator.presentGallery(gallery)
-        }
-        
-        let cancelAction = UIAlertAction(title: "Cancelar", style: .cancel) { _ in
-            onImageSelected(nil)
-        }
-        
-        actionSheet.addAction(cameraAction)
-        actionSheet.addAction(galleryAction)
-        actionSheet.addAction(cancelAction)
-        
-        return actionSheet
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        picker.allowsEditing = true
+        return picker
     }
     
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(onImageSelected: onImageSelected)
     }
     
-    class Coordinator: NSObject {
-        let parent: ImagePickerView
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onImageSelected: (UIImage?) -> Void
         
-        init(_ parent: ImagePickerView) {
-            self.parent = parent
+        init(onImageSelected: @escaping (UIImage?) -> Void) {
+            self.onImageSelected = onImageSelected
         }
         
-        func presentCamera(_ camera: CameraViewController) {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first,
-               let rootViewController = window.rootViewController {
-                rootViewController.present(camera, animated: true)
-            }
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+            onImageSelected(image)
         }
         
-        func presentGallery(_ gallery: PhotoLibraryViewController) {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first,
-               let rootViewController = window.rootViewController {
-                rootViewController.present(gallery, animated: true)
-            }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            onImageSelected(nil)
         }
     }
 }
 
-// Controlador para la cámara
-class CameraViewController: UIImagePickerController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    private let onImageSelected: (UIImage?) -> Void
+// Vista wrapper para la galería
+struct PhotoLibraryPickerView: UIViewControllerRepresentable {
+    let onImageSelected: (UIImage?) -> Void
     
-    init(onImageSelected: @escaping (UIImage?) -> Void) {
-        self.onImageSelected = onImageSelected
-        super.init(nibName: nil, bundle: nil)
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.delegate = context.coordinator
+        picker.allowsEditing = true
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImageSelected: onImageSelected)
+    }
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onImageSelected: (UIImage?) -> Void
         
-        self.sourceType = .camera
-        self.delegate = self
-        self.allowsEditing = true
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
-        onImageSelected(image)
-        dismiss(animated: true)
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        onImageSelected(nil)
-        dismiss(animated: true)
-    }
-}
-
-// Controlador para la galería de fotos
-class PhotoLibraryViewController: UIImagePickerController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    private let onImageSelected: (UIImage?) -> Void
-    
-    init(onImageSelected: @escaping (UIImage?) -> Void) {
-        self.onImageSelected = onImageSelected
-        super.init(nibName: nil, bundle: nil)
+        init(onImageSelected: @escaping (UIImage?) -> Void) {
+            self.onImageSelected = onImageSelected
+        }
         
-        self.sourceType = .photoLibrary
-        self.delegate = self
-        self.allowsEditing = true
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
-        onImageSelected(image)
-        dismiss(animated: true)
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        onImageSelected(nil)
-        dismiss(animated: true)
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+            onImageSelected(image)
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            onImageSelected(nil)
+        }
     }
 }
