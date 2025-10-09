@@ -301,7 +301,7 @@ class APIService {
     
     /// Obtiene todas las entregas del usuario autenticado
     func obtenerMisEntregas(token: String) async throws -> [Entrega] {
-        guard let url = URL(string: "\(baseURL)/api/entregas") else {
+        guard let url = URL(string: "\(baseURL)/api/entregas/mis-entregas") else {
             throw APIError.invalidURL
         }
         
