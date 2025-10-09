@@ -26,8 +26,8 @@ class TaskDetailViewModel: ObservableObject {
             entregas = try await apiService.obtenerMisEntregas(token: token)
         } catch let apiError as APIError {
             error = apiError.localizedDescription
-        } catch {
-            error = error.localizedDescription
+        } catch let generalError {
+            error = generalError.localizedDescription
         }
         
         isLoading = false
@@ -55,8 +55,8 @@ class TaskDetailViewModel: ObservableObject {
             entregas.append(nuevaEntrega)
         } catch let apiError as APIError {
             error = apiError.localizedDescription
-        } catch {
-            error = error.localizedDescription
+        } catch let generalError {
+            error = generalError.localizedDescription
         }
         
         isUploadingEntrega = false
@@ -92,8 +92,8 @@ class TaskDetailViewModel: ObservableObject {
             gradingEntrega = nil
         } catch let apiError as APIError {
             error = apiError.localizedDescription
-        } catch {
-            error = error.localizedDescription
+        } catch let generalError {
+            error = generalError.localizedDescription
         }
         
         isLoading = false

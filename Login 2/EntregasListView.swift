@@ -21,8 +21,8 @@ class EntregasListViewModel: ObservableObject {
             entregas = try await apiService.obtenerEntregasSinCalificar(token: token)
         } catch let apiError as APIError {
             error = apiError.localizedDescription
-        } catch {
-            error = error.localizedDescription
+        } catch let generalError {
+            error = generalError.localizedDescription
         }
         
         isLoading = false
@@ -56,8 +56,8 @@ class EntregasListViewModel: ObservableObject {
             gradingEntrega = nil
         } catch let apiError as APIError {
             error = apiError.localizedDescription
-        } catch {
-            error = error.localizedDescription
+        } catch let generalError {
+            error = generalError.localizedDescription
         }
         
         isLoading = false
