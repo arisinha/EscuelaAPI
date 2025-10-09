@@ -6,6 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		100847672E970E4E0006D721 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100847662E970E4D0006D721 /* TaskDetailView.swift */; };
+		103895FB2E971AF000D2FC19 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103895FA2E971AF000D2FC19 /* DataService.swift */; };
+		105F7D6D2E8F85B3004724CB /* VistaLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D6A2E8F85B3004724CB /* VistaLogin.swift */; };
+		105F7D6F2E8F85B3004724CB /* LoginApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D692E8F85B3004724CB /* LoginApp.swift */; };
+		105F7D702E8F85B3004724CB /* Autenticacion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D662E8F85B3004724CB /* Autenticacion.swift */; };
+		105F7D722E8F85B3004724CB /* VistaMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D6B2E8F85B3004724CB /* VistaMain.swift */; };
+		10D116632E942C920070613C /* UniversityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D116622E942C8C0070613C /* UniversityModels.swift */; };
+		10D116652E942CBB0070613C /* VistaGrupos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D116642E942CB80070613C /* VistaGrupos.swift */; };
+		10D116692E942F1C0070613C /* ApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D116682E942F190070613C /* ApiService.swift */; };
+		10D1166B2E942F4F0070613C /* TaskListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D1166A2E942F460070613C /* TaskListView.swift */; };
+		10D1166D2E94301C0070613C /* AsignacionesModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D1166C2E94301C0070613C /* AsignacionesModels.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		105F7D4A2E8F8561004724CB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,17 +38,23 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		100847662E970E4D0006D721 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
+		103895FA2E971AF000D2FC19 /* DataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
 		105F7D3A2E8F8560004724CB /* AppTareas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppTareas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		105F7D492E8F8561004724CB /* AppTareasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTareasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		105F7D532E8F8561004724CB /* AppTareasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTareasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		105F7D662E8F85B3004724CB /* Autenticacion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Autenticacion.swift; sourceTree = "<group>"; };
+		105F7D692E8F85B3004724CB /* LoginApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginApp.swift; sourceTree = "<group>"; };
+		105F7D6A2E8F85B3004724CB /* VistaLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VistaLogin.swift; sourceTree = "<group>"; };
+		105F7D6B2E8F85B3004724CB /* VistaMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VistaMain.swift; sourceTree = "<group>"; };
+		10D116622E942C8C0070613C /* UniversityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversityModels.swift; sourceTree = "<group>"; };
+		10D116642E942CB80070613C /* VistaGrupos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VistaGrupos.swift; sourceTree = "<group>"; };
+		10D116682E942F190070613C /* ApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiService.swift; sourceTree = "<group>"; };
+		10D1166A2E942F460070613C /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
+		10D1166C2E94301C0070613C /* AsignacionesModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsignacionesModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		105F7D3C2E8F8560004724CB /* AppTareas */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AppTareas;
-			sourceTree = "<group>";
-		};
 		105F7D4C2E8F8561004724CB /* AppTareasTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = AppTareasTests;
@@ -75,10 +95,10 @@
 		105F7D312E8F8560004724CB = {
 			isa = PBXGroup;
 			children = (
-				105F7D3C2E8F8560004724CB /* AppTareas */,
 				105F7D4C2E8F8561004724CB /* AppTareasTests */,
 				105F7D562E8F8561004724CB /* AppTareasUITests */,
 				105F7D3B2E8F8560004724CB /* Products */,
+				105F7D6C2E8F85B3004724CB /* Login 2 */,
 			);
 			sourceTree = "<group>";
 		};
@@ -90,6 +110,24 @@
 				105F7D532E8F8561004724CB /* AppTareasUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		105F7D6C2E8F85B3004724CB /* Login 2 */ = {
+			isa = PBXGroup;
+			children = (
+				10D1166A2E942F460070613C /* TaskListView.swift */,
+				10D116682E942F190070613C /* ApiService.swift */,
+				10D116642E942CB80070613C /* VistaGrupos.swift */,
+				10D116622E942C8C0070613C /* UniversityModels.swift */,
+				103895FA2E971AF000D2FC19 /* DataService.swift */,
+				105F7D662E8F85B3004724CB /* Autenticacion.swift */,
+				105F7D692E8F85B3004724CB /* LoginApp.swift */,
+				105F7D6A2E8F85B3004724CB /* VistaLogin.swift */,
+				105F7D6B2E8F85B3004724CB /* VistaMain.swift */,
+				10D1166C2E94301C0070613C /* AsignacionesModels.swift */,
+				100847662E970E4D0006D721 /* TaskDetailView.swift */,
+			);
+			path = "Login 2";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -106,9 +144,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				105F7D3C2E8F8560004724CB /* AppTareas */,
 			);
 			name = AppTareas;
 			packageProductDependencies = (
@@ -236,6 +271,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				100847672E970E4E0006D721 /* TaskDetailView.swift in Sources */,
+				103895FB2E971AF000D2FC19 /* DataService.swift in Sources */,
+				105F7D6D2E8F85B3004724CB /* VistaLogin.swift in Sources */,
+				10D1166B2E942F4F0070613C /* TaskListView.swift in Sources */,
+				10D116632E942C920070613C /* UniversityModels.swift in Sources */,
+				10D116652E942CBB0070613C /* VistaGrupos.swift in Sources */,
+				105F7D6F2E8F85B3004724CB /* LoginApp.swift in Sources */,
+				10D1166D2E94301C0070613C /* AsignacionesModels.swift in Sources */,
+				10D116692E942F1C0070613C /* ApiService.swift in Sources */,
+				105F7D702E8F85B3004724CB /* Autenticacion.swift in Sources */,
+				105F7D722E8F85B3004724CB /* VistaMain.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,6 +441,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VW86F5RKDL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -426,6 +473,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VW86F5RKDL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

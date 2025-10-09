@@ -1,23 +1,41 @@
 import Foundation
 import Combine
 
-// Este ViewModel actuará como nuestra "única fuente de verdad"
-// para saber si el usuario está autenticado.
-// Es un ObservableObject para que la UI pueda reaccionar a sus cambios.
+@MainActor
 class AuthenticationViewModel: ObservableObject {
+    static let shared = AuthenticationViewModel()
     
-    // @Published notifica a cualquier vista que observe este objeto
-    // cuando el valor de isAuthenticated cambia.
-    @Published var isAuthenticated = false
+    @Published var usuarioAutenticado: Usuario?
+    @Published private(set) var authToken: String?
     
-    // Simula un proceso de inicio de sesión.
-    func login() {
-        // En una app real, aquí verificarías las credenciales.
-        // Para este ejemplo, simplemente cambiamos el estado.
-        // Usamos una pequeña demora para simular una llamada de red.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.isAuthenticated = true
+    @Published var estadoDeCarga = false
+    @Published var error: String?
+
+    private let apiService = APIService.shared
+
+    func login(nombreUsuario: String, contrasena: String) async {
+        estadoDeCarga = true
+        error = nil
+        
+        do {
+            let response = try await apiService.login(nombreUsuario: nombreUsuario, contrasena: contrasena)
+            self.usuarioAutenticado = response.usuario
+            self.authToken = response.token
+        } catch let apiError as APIError {
+            self.error = apiError.localizedDescription
+            logout()
+        } catch {
+            self.error = error.localizedDescription.isEmpty ? "Ocurrió un error inesperado. Intenta nuevamente." : error.localizedDescription
+            logout()
         }
+        
+        estadoDeCarga = false
+    }
+    
+    func logout() {
+        usuarioAutenticado = nil
+        authToken = nil
+        // Limpiar datos del DataService
+        DataService.shared.limpiarDatos()
     }
 }
-

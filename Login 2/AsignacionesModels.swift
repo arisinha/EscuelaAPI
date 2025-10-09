@@ -1,11 +1,13 @@
 import Foundation
 
-struct Grupo: Identifiable, Hashable {
+struct Grupo: Codable, Identifiable, Hashable {
     let id: UUID
     let nombreMateria: String
     let codigoGrupo: String
 }
 
+// NOTA: Este modelo ya no se usa - ahora usamos el modelo Tarea de UniversityModels.swift
+// Lo mantengo aquí por compatibilidad, pero considera eliminarlo en el futuro
 struct Asignacion: Identifiable, Hashable {
     let id: UUID
     let grupoId: UUID
@@ -21,7 +23,6 @@ struct Asignacion: Identifiable, Hashable {
         self.totalAlumnos = totalAlumnos
     }
 
-    // Conveniencia para vistas que muestran el nombre de la materia de la asignación
     var nombreMateria: String {
         if let grupo = DataService.shared.obtenerGrupos().first(where: { $0.id == grupoId }) {
             return grupo.nombreMateria

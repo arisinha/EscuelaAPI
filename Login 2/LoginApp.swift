@@ -3,18 +3,15 @@ import Combine
 
 @main
 struct UniversityApp: App {
-    // @StateObject crea y mantiene viva una única instancia
-    // del AuthenticationViewModel durante todo el ciclo de vida de la app.
-    @StateObject private var authViewModel = AuthenticationViewModel()
+    // Creamos una única instancia del ViewModel de autenticación
+    // y la pasamos a través del entorno de la app.
+    @StateObject private var authViewModel = AuthenticationViewModel.shared
 
     var body: some Scene {
         WindowGroup {
-            // Aquí está la lógica de navegación principal.
-            // Si el usuario está autenticado, muestra la vista principal (MainView).
-            // Si no, muestra la vista de inicio de sesión (LoginView).
-            if authViewModel.isAuthenticated {
-                // Inyectamos el ViewModel en el entorno para que las vistas hijas
-                // puedan acceder a él si lo necesitan.
+            // Si hay un usuario autenticado, muestra la vista principal.
+            // Si no, muestra la vista de login.
+            if authViewModel.usuarioAutenticado != nil {
                 MainView()
                     .environmentObject(authViewModel)
             } else {

@@ -12,12 +12,11 @@ class LoginViewModel: ObservableObject {
     func performLogin(authViewModel: AuthenticationViewModel) {
         isLoading = true
         print("Iniciando sesión para el profesor: \(teacherID)")
-        
-        // Llamamos al método del ViewModel de autenticación global.
-        authViewModel.login()
-        
-        // Nota: isLoading se quedaría en true porque la vista desaparecerá.
-        // En un caso real, manejarías el final de la carga al recibir una respuesta.
+
+        Task {
+            defer { isLoading = false }
+            await authViewModel.login(nombreUsuario: teacherID, contrasena: password)
+        }
     }
 }
 
@@ -27,6 +26,7 @@ struct LoginView: View {
     
     // Obtenemos el ViewModel de autenticación desde el entorno.
     @EnvironmentObject var authViewModel: AuthenticationViewModel
+    @State private var showError = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -46,12 +46,15 @@ struct LoginView: View {
                 .background(Color(.systemGray6))
                 .cornerRadius(10)
                 .keyboardType(.emailAddress)
-                .autocapitalization(.none)
+                .textInputAutocapitalization(.never)
 
             SecureField("Contraseña", text: $viewModel.password)
                 .padding()
                 .background(Color(.systemGray6))
                 .cornerRadius(10)
+                .onSubmit {
+                    viewModel.performLogin(authViewModel: authViewModel)
+                }
 
             // El botón de acción llama directamente al método del ViewModel.
             Button(action: {
@@ -70,11 +73,27 @@ struct LoginView: View {
             .padding()
             .background(Color.blue)
             .cornerRadius(10)
-            .disabled(viewModel.isLoading)
+            .disabled(viewModel.isLoading || viewModel.teacherID.isEmpty || viewModel.password.isEmpty)
+
+            if let error = authViewModel.error {
+                Text(error)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+            }
 
             Spacer()
             Spacer()
         }
         .padding()
+        .onChange(of: authViewModel.error) { _, newValue in
+            showError = newValue != nil
+        }
+        .alert("Error al iniciar sesión", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(authViewModel.error ?? "Intenta nuevamente.")
+        }
     }
 }
+
