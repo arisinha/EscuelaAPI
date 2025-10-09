@@ -12,4 +12,6 @@ public interface IEntregaRepository
     Task<IEnumerable<Entrega>> GetAllAsync();
     Task<Entrega?> UpdateAsync(Entrega entrega);
     Task<bool> DeleteAsync(int id);
+    Task<IEnumerable<Entrega>> GetEntregasSinCalificarAsync();
+    Task<IEnumerable<Entrega>> GetEntregasCalificadasPorProfesorAsync(int profesorId);
 }

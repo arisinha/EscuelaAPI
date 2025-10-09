@@ -10,4 +10,7 @@ public interface IEntregaService
     Task<IEnumerable<EntregaDto>> GetByAlumnoIdAsync(int alumnoId);
     Task<EntregaDto?> GetByTareaIdAndAlumnoIdAsync(int tareaId, int alumnoId);
     Task<bool> DeleteAsync(int id, int alumnoId);
+    Task<EntregaDto> CalificarEntregaAsync(int entregaId, CalificarEntregaDto dto, int profesorId);
+    Task<IEnumerable<EntregaDto>> GetEntregasSinCalificarAsync();
+    Task<IEnumerable<EntregaDto>> GetEntregasCalificadasPorProfesorAsync(int profesorId);
 }

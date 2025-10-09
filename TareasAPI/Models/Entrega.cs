@@ -32,10 +32,24 @@ public class Entrega
 
     public DateTimeOffset FechaEntrega { get; set; } = DateTimeOffset.UtcNow;
 
+    // Calificación
+    [Range(0, 100)]
+    public decimal? Calificacion { get; set; }
+
+    [StringLength(1000)]
+    public string? RetroalimentacionProfesor { get; set; }
+
+    public int? ProfesorId { get; set; }
+
+    public DateTimeOffset? FechaCalificacion { get; set; }
+
     // Navigation properties
     [ForeignKey("TareaId")]
     public virtual required Tarea Tarea { get; set; }
 
     [ForeignKey("AlumnoId")]
     public virtual required Usuario Alumno { get; set; }
+
+    [ForeignKey("ProfesorId")]
+    public virtual Usuario? Profesor { get; set; }
 }

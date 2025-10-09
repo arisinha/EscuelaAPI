@@ -84,7 +84,10 @@ public class EntregaService : IEntregaService
             entregaCreada.Comentario,
             entregaCreada.NombreArchivo,
             $"/uploads/entregas/{fileName}",
-            entregaCreada.FechaEntrega
+            entregaCreada.FechaEntrega,
+            entregaCreada.Calificacion,
+            entregaCreada.RetroalimentacionProfesor,
+            entregaCreada.FechaCalificacion
         );
     }
 
@@ -134,6 +137,33 @@ public class EntregaService : IEntregaService
         return await _entregaRepository.DeleteAsync(id);
     }
 
+    public async Task<EntregaDto> CalificarEntregaAsync(int entregaId, CalificarEntregaDto dto, int profesorId)
+    {
+        var entrega = await _entregaRepository.GetByIdAsync(entregaId);
+        if (entrega == null)
+            throw new ArgumentException("La entrega especificada no existe.");
+
+        entrega.Calificacion = dto.Calificacion;
+        entrega.RetroalimentacionProfesor = dto.RetroalimentacionProfesor;
+        entrega.ProfesorId = profesorId;
+        entrega.FechaCalificacion = DateTimeOffset.UtcNow;
+
+        var entregaActualizada = await _entregaRepository.UpdateAsync(entrega);
+        return MapEntregaToDto(entregaActualizada!);
+    }
+
+    public async Task<IEnumerable<EntregaDto>> GetEntregasSinCalificarAsync()
+    {
+        var entregas = await _entregaRepository.GetEntregasSinCalificarAsync();
+        return entregas.Select(MapEntregaToDto);
+    }
+
+    public async Task<IEnumerable<EntregaDto>> GetEntregasCalificadasPorProfesorAsync(int profesorId)
+    {
+        var entregas = await _entregaRepository.GetEntregasCalificadasPorProfesorAsync(profesorId);
+        return entregas.Select(MapEntregaToDto);
+    }
+
     private static EntregaDto MapEntregaToDto(Entrega entrega)
     {
         var alumnoDto = new UsuarioDto(
@@ -141,6 +171,12 @@ public class EntregaService : IEntregaService
             entrega.Alumno.NombreUsuario,
             entrega.Alumno.NombreCompleto
         );
+
+        var profesorDto = entrega.Profesor != null ? new UsuarioDto(
+            entrega.Profesor.Id,
+            entrega.Profesor.NombreUsuario,
+            entrega.Profesor.NombreCompleto
+        ) : null;
 
         var fileName = Path.GetFileName(entrega.RutaArchivo);
         
@@ -154,7 +190,11 @@ public class EntregaService : IEntregaService
             entrega.TipoArchivo,
             entrega.TamanoArchivo,
             entrega.FechaEntrega,
-            alumnoDto
+            entrega.Calificacion,
+            entrega.RetroalimentacionProfesor,
+            entrega.FechaCalificacion,
+            alumnoDto,
+            profesorDto
         );
     }
 }

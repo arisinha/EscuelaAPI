@@ -99,6 +99,45 @@ public class EntregasController : ControllerBase
         return Ok(new { success = true, message = "Entrega eliminada exitosamente" });
     }
 
+    // Endpoints para profesores (calificación)
+    [HttpPost("{id:int}/calificar")]
+    public async Task<IActionResult> CalificarEntrega(int id, [FromBody] CalificarEntregaDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, errors = ModelState });
+
+            var profesorId = GetCurrentUserId();
+            var entrega = await _entregaService.CalificarEntregaAsync(id, dto, profesorId);
+
+            return Ok(new { success = true, message = "Entrega calificada exitosamente", data = entrega });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "Error interno del servidor", details = ex.Message });
+        }
+    }
+
+    [HttpGet("sin-calificar")]
+    public async Task<ActionResult<IEnumerable<EntregaDto>>> GetEntregasSinCalificar()
+    {
+        var entregas = await _entregaService.GetEntregasSinCalificarAsync();
+        return Ok(new { success = true, count = entregas.Count(), data = entregas });
+    }
+
+    [HttpGet("mis-calificaciones")]
+    public async Task<ActionResult<IEnumerable<EntregaDto>>> GetMisCalificaciones()
+    {
+        var profesorId = GetCurrentUserId();
+        var entregas = await _entregaService.GetEntregasCalificadasPorProfesorAsync(profesorId);
+        return Ok(new { success = true, count = entregas.Count(), data = entregas });
+    }
+
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)

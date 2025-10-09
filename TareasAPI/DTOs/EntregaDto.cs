@@ -12,7 +12,11 @@ public record EntregaDto(
     string TipoArchivo,
     long TamanoArchivo,
     DateTimeOffset FechaEntrega,
-    UsuarioDto Alumno
+    decimal? Calificacion,
+    string? RetroalimentacionProfesor,
+    DateTimeOffset? FechaCalificacion,
+    UsuarioDto Alumno,
+    UsuarioDto? Profesor
 );
 
 public record CrearEntregaDto(
@@ -27,5 +31,17 @@ public record EntregaResponseDto(
     string? Comentario,
     string NombreArchivo,
     string UrlArchivo,
-    DateTimeOffset FechaEntrega
+    DateTimeOffset FechaEntrega,
+    decimal? Calificacion,
+    string? RetroalimentacionProfesor,
+    DateTimeOffset? FechaCalificacion
+);
+
+public record CalificarEntregaDto(
+    [Required]
+    [Range(0, 100, ErrorMessage = "La calificación debe estar entre 0 y 100")]
+    decimal Calificacion,
+    
+    [StringLength(1000, ErrorMessage = "La retroalimentación no puede exceder los 1000 caracteres")]
+    string? RetroalimentacionProfesor
 );

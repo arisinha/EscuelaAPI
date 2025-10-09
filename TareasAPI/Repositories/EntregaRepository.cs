@@ -26,6 +26,7 @@ public class EntregaRepository : IEntregaRepository
         return await _context.Entregas
             .Include(e => e.Alumno)
             .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
@@ -34,6 +35,7 @@ public class EntregaRepository : IEntregaRepository
         return await _context.Entregas
             .Include(e => e.Alumno)
             .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
             .Where(e => e.TareaId == tareaId)
             .OrderByDescending(e => e.FechaEntrega)
             .ToListAsync();
@@ -44,6 +46,7 @@ public class EntregaRepository : IEntregaRepository
         return await _context.Entregas
             .Include(e => e.Alumno)
             .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
             .Where(e => e.AlumnoId == alumnoId)
             .OrderByDescending(e => e.FechaEntrega)
             .ToListAsync();
@@ -54,6 +57,7 @@ public class EntregaRepository : IEntregaRepository
         return await _context.Entregas
             .Include(e => e.Alumno)
             .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
             .FirstOrDefaultAsync(e => e.TareaId == tareaId && e.AlumnoId == alumnoId);
     }
 
@@ -62,6 +66,7 @@ public class EntregaRepository : IEntregaRepository
         return await _context.Entregas
             .Include(e => e.Alumno)
             .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
             .OrderByDescending(e => e.FechaEntrega)
             .ToListAsync();
     }
@@ -81,5 +86,27 @@ public class EntregaRepository : IEntregaRepository
         _context.Entregas.Remove(entrega);
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<IEnumerable<Entrega>> GetEntregasSinCalificarAsync()
+    {
+        return await _context.Entregas
+            .Include(e => e.Alumno)
+            .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
+            .Where(e => e.Calificacion == null)
+            .OrderBy(e => e.FechaEntrega)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Entrega>> GetEntregasCalificadasPorProfesorAsync(int profesorId)
+    {
+        return await _context.Entregas
+            .Include(e => e.Alumno)
+            .Include(e => e.Tarea)
+            .Include(e => e.Profesor)
+            .Where(e => e.ProfesorId == profesorId && e.Calificacion != null)
+            .OrderByDescending(e => e.FechaCalificacion)
+            .ToListAsync();
     }
 }
