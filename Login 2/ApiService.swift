@@ -198,6 +198,69 @@ class APIService {
         } catch let apiError as APIError {
             throw apiError
         } catch {
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+    
+    // MARK: - Obtener Tareas por Grupo
+    
+    func obtenerTareasPorGrupo(grupoId: Int, token: String) async throws -> [Tarea] {
+        guard let url = URL(string: "\(baseURL)/api/Grupos/\(grupoId)/tareas") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        #if DEBUG
+        print("[API] GET /api/Grupos/\(grupoId)/tareas -> URL:", url.absoluteString)
+        print("[API] Authorization:", request.value(forHTTPHeaderField: "Authorization") ?? "nil")
+        #endif
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        #if DEBUG
+        print("[API] /api/Grupos/\(grupoId)/tareas status:", httpResponse.statusCode)
+        print("[API] /api/Grupos/\(grupoId)/tareas body:", String(data: data, encoding: .utf8) ?? "nil")
+        #endif
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al obtener tareas del grupo. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+
+        do {
+            // El backend devuelve: { success: true, count: 4, data: [Tarea] }
+            let wrapper = try jsonDecoder.decode(TareasResponseWrapper.self, from: data)
+            
+            if wrapper.success {
+                return wrapper.data
+            } else {
+                throw APIError.requestFailed(description: "La API indicó fallo al obtener tareas del grupo.")
+            }
+            
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        } catch let apiError as APIError {
+            throw apiError
+        } catch {
             throw APIError.decodingError(description: "Error desconocido: \(error.localizedDescription)")
         }
     }
@@ -258,9 +321,7 @@ class APIService {
             // Formato 2: Array de {id:Int, nombreMateria:String, codigoGrupo:String}
             let remote = try jsonDecoder.decode([RemoteGrupo].self, from: data)
             let grupos: [Grupo] = remote.map { item in
-                let namespace = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-                let stableUUID = APIService.uuidV5(namespace: namespace, name: "grupo:\(item.id)")
-                return Grupo(id: stableUUID, nombreMateria: item.nombreMateria, codigoGrupo: item.codigoGrupo)
+                return Grupo(id: item.id, nombreMateria: item.nombreMateria, codigoGrupo: item.codigoGrupo)
             }
             return grupos
             

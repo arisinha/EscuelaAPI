@@ -3,10 +3,8 @@ import Combine
 
 // Refleja el enum 'EstadoTarea' de C#.
 enum EstadoTarea: String, Codable, CaseIterable {
-    case Pendiente
-    case EnProgreso
-    case Completada
-    case Cancelada
+    case Abierto
+    case Cerrado
 }
 
 // Refleja el modelo 'Tarea' de C# con usuario anidado

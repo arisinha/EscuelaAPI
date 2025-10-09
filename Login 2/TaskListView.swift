@@ -15,9 +15,8 @@ class TasksViewModel: ObservableObject {
         error = nil
         
         do {
-            let tareasDelUsuario = try await apiService.obtenerTareas(paraUsuarioId: userId, token: token)
-            // Si más adelante hay endpoint por grupo, aquí filtramos por grupo.
-            self.tareas = tareasDelUsuario
+            // Usar la nueva función que filtra por grupo específico
+            self.tareas = try await apiService.obtenerTareasPorGrupo(grupoId: grupo.id, token: token)
         } catch let apiError as APIError {
             self.error = apiError.localizedDescription
         } catch {
@@ -109,14 +108,10 @@ struct TasksListView: View {
     // Helper para asignar colores según el estado
     private func colorParaEstado(_ estado: EstadoTarea) -> Color {
         switch estado {
-        case .Pendiente:
-            return .orange
-        case .EnProgreso:
+        case .Abierto:
             return .blue
-        case .Completada:
+        case .Cerrado:
             return .green
-        case .Cancelada:
-            return .red
         }
     }
 }

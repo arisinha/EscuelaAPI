@@ -1,7 +1,7 @@
 import Foundation
 
 struct Grupo: Codable, Identifiable, Hashable {
-    let id: UUID
+    let id: Int
     let nombreMateria: String
     let codigoGrupo: String
 }
@@ -9,13 +9,13 @@ struct Grupo: Codable, Identifiable, Hashable {
 // NOTA: Este modelo ya no se usa - ahora usamos el modelo Tarea de UniversityModels.swift
 // Lo mantengo aquí por compatibilidad, pero considera eliminarlo en el futuro
 struct Asignacion: Identifiable, Hashable {
-    let id: UUID
-    let grupoId: UUID
+    let id: Int
+    let grupoId: Int
     let titulo: String
     let entregasRealizadas: Int
     let totalAlumnos: Int
 
-    init(id: UUID = UUID(), grupoId: UUID, titulo: String, entregasRealizadas: Int, totalAlumnos: Int) {
+    init(id: Int = 0, grupoId: Int, titulo: String, entregasRealizadas: Int, totalAlumnos: Int) {
         self.id = id
         self.grupoId = grupoId
         self.titulo = titulo

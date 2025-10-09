@@ -359,14 +359,10 @@ struct TaskDetailView: View {
 // Helper para colores de estado
 private func colorParaEstado(_ estado: EstadoTarea) -> Color {
     switch estado {
-    case .Pendiente:
-        return .orange
-    case .EnProgreso:
+    case .Abierto:
         return .blue
-    case .Completada:
+    case .Cerrado:
         return .green
-    case .Cancelada:
-        return .red
     }
 }
 
