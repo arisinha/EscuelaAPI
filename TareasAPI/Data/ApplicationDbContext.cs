@@ -90,9 +90,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(e => e.AlumnoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Unique constraint: one delivery per student per task
+            // Index for better performance (not unique to allow multiple deliveries per student per task)
             entity.HasIndex(e => new { e.TareaId, e.AlumnoId })
-                .IsUnique()
                 .HasDatabaseName("IX_Entregas_TareaId_AlumnoId");
         });
     }

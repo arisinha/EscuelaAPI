@@ -28,6 +28,7 @@ public record CrearEntregaDto(
 public record EntregaResponseDto(
     int Id,
     int TareaId,
+    int AlumnoId,
     string? Comentario,
     string NombreArchivo,
     string UrlArchivo,

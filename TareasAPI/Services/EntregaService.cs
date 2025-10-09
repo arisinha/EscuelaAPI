@@ -31,10 +31,8 @@ public class EntregaService : IEntregaService
         if (tarea == null)
             throw new ArgumentException("La tarea especificada no existe.");
 
-        // Verificar que no existe ya una entrega para esta tarea y alumno
-        var entregaExistente = await _entregaRepository.GetByTareaIdAndAlumnoIdAsync(dto.TareaId, alumnoId);
-        if (entregaExistente != null)
-            throw new InvalidOperationException("Ya existe una entrega para esta tarea.");
+        // Permitir múltiples entregas por alumno por tarea
+        // (Cada entrega es independiente y puede ser calificada por separado)
 
         // Validar archivo
         if (dto.Archivo == null || dto.Archivo.Length == 0)
@@ -81,6 +79,7 @@ public class EntregaService : IEntregaService
         return new EntregaResponseDto(
             entregaCreada.Id,
             entregaCreada.TareaId,
+            entregaCreada.AlumnoId,
             entregaCreada.Comentario,
             entregaCreada.NombreArchivo,
             $"/uploads/entregas/{fileName}",
