@@ -452,8 +452,8 @@ class APIService {
     
     /// Helper para determinar el content type basado en la extensión del archivo
     private func determinarContentType(nombreArchivo: String) -> String {
-        let extension = (nombreArchivo as NSString).pathExtension.lowercased()
-        switch extension {
+        let fileExtension = (nombreArchivo as NSString).pathExtension.lowercased()
+        switch fileExtension {
         case "jpg", "jpeg":
             return "image/jpeg"
         case "png":

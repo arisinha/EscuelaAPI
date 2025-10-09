@@ -210,8 +210,8 @@ struct GradingSheetView: View {
     }
     
     private func iconoParaArchivo(_ nombreArchivo: String) -> String {
-        let extension = (nombreArchivo as NSString).pathExtension.lowercased()
-        switch extension {
+        let fileExtension = (nombreArchivo as NSString).pathExtension.lowercased()
+        switch fileExtension {
         case "jpg", "jpeg", "png", "gif":
             return "photo"
         case "pdf":
