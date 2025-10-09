@@ -16,7 +16,7 @@ public class Tarea
     public string? Descripcion { get; set; }
 
     [Required]
-    public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
+    public EstadoTarea Estado { get; set; } = EstadoTarea.Abierto;
 
     public DateTimeOffset FechaCreacion { get; set; } = DateTimeOffset.UtcNow;
 
@@ -34,8 +34,6 @@ public class Tarea
 
 public enum EstadoTarea
 {
-    Pendiente = 0,
-    EnProgreso = 1,
-    Completada = 2,
-    Cancelada = 3
+    Abierto = 0,
+    Cerrado = 1
 }

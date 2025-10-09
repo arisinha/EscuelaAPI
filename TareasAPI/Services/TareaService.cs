@@ -21,7 +21,7 @@ public class TareaService : ITareaService
             Titulo = crearTareaDto.Titulo,
             Descripcion = crearTareaDto.Descripcion,
             UsuarioId = userId,
-            Estado = EstadoTarea.Pendiente,
+            Estado = EstadoTarea.Abierto,
             FechaCreacion = DateTimeOffset.UtcNow,
             Usuario = null!,
             GrupoId = crearTareaDto.GrupoId
