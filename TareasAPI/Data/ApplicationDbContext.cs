@@ -8,6 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Tarea> Tareas { get; set; }
     public DbSet<Grupo> Grupos { get; set; }
+    public DbSet<Entrega> Entregas { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -60,6 +61,39 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(g => g.Id);
             entity.Property(g => g.NombreMateria).IsRequired().HasMaxLength(200).HasColumnName("nombre_materia");
             entity.Property(g => g.CodigoGrupo).IsRequired().HasMaxLength(100).HasColumnName("codigo_grupo");
+        });
+
+        modelBuilder.Entity<Entrega>(entity =>
+        {
+            entity.ToTable("Entregas");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Comentario).HasMaxLength(500);
+            entity.Property(e => e.NombreArchivo).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.RutaArchivo).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.TipoArchivo).HasMaxLength(50);
+            entity.Property(e => e.FechaEntrega).HasColumnType("datetime").IsRequired();
+
+            // Store DateTimeOffset as UTC DateTime in database
+            entity.Property(e => e.FechaEntrega)
+                  .HasConversion(
+                      v => v.UtcDateTime,
+                      v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            // Foreign key relationships
+            entity.HasOne(e => e.Tarea)
+                .WithMany()
+                .HasForeignKey(e => e.TareaId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Alumno)
+                .WithMany()
+                .HasForeignKey(e => e.AlumnoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Unique constraint: one delivery per student per task
+            entity.HasIndex(e => new { e.TareaId, e.AlumnoId })
+                .IsUnique()
+                .HasDatabaseName("IX_Entregas_TareaId_AlumnoId");
         });
     }
 }

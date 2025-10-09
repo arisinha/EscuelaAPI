@@ -29,6 +29,8 @@ builder.Services.AddScoped<ITareaRepository, TareaRepository>();
 builder.Services.AddScoped<ITareaService, TareaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGrupoRepository, GrupoRepository>();
+builder.Services.AddScoped<IEntregaRepository, EntregaRepository>();
+builder.Services.AddScoped<IEntregaService, EntregaService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -170,6 +172,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Para servir archivos estáticos (imágenes subidas)
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
