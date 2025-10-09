@@ -2,6 +2,7 @@
 import SwiftUI
 import Combine
 import PhotosUI
+import UniformTypeIdentifiers
 
 @MainActor
 class TaskDetailViewModel: ObservableObject {
@@ -16,6 +17,10 @@ class TaskDetailViewModel: ObservableObject {
     @Published var gradingEntrega: Entrega?
     @Published var calificacion: String = ""
     @Published var retroalimentacion: String = ""
+    @Published var isShowingDocumentPicker = false
+    @Published var selectedDocumentURL: URL?
+    @Published var nombreAlumno: String = ""
+    @Published var showingNameDialog = false
     
     private let apiService = APIService.shared
     
@@ -44,16 +49,59 @@ class TaskDetailViewModel: ObservableObject {
             return
         }
         
-        let nombreArchivo = "entrega_tarea\(tarea.id)_\(Date().timeIntervalSince1970).jpg"
+        let nombreSanitizado = nombreAlumno.isEmpty ? "Alumno" : nombreAlumno.replacingOccurrences(of: " ", with: "_")
+        let nombreArchivo = "\(nombreSanitizado)_tarea\(tarea.id)_\(Date().timeIntervalSince1970).jpg"
         
         do {
-            let nuevaEntrega = try await apiService.crearEntrega(
+            let nuevaEntrega = try await apiService.crearEntregaConComentario(
                 tareaId: tarea.id,
                 archivo: imageData,
                 nombreArchivo: nombreArchivo,
+                comentario: nombreAlumno.isEmpty ? nil : "Entrega de: \(nombreAlumno)",
                 token: token
             )
-            entregas.append(nuevaEntrega)
+            
+            await cargarEntregas(token: token)
+            nombreAlumno = "" // Limpiar el campo después de subir
+        } catch let apiError as APIError {
+            error = apiError.localizedDescription
+        } catch let generalError {
+            error = generalError.localizedDescription
+        }
+        
+        isUploadingEntrega = false
+    }
+    
+    func subirDocumento(tarea: Tarea, documentURL: URL, token: String) async {
+        isUploadingEntrega = true
+        error = nil
+        
+        guard documentURL.startAccessingSecurityScopedResource() else {
+            error = "No se pudo acceder al documento"
+            isUploadingEntrega = false
+            return
+        }
+        
+        defer { documentURL.stopAccessingSecurityScopedResource() }
+        
+        do {
+            let documentData = try Data(contentsOf: documentURL)
+            let originalName = documentURL.lastPathComponent
+            let nombreSanitizado = nombreAlumno.isEmpty ? "Alumno" : nombreAlumno.replacingOccurrences(of: " ", with: "_")
+            let fileExtension = (originalName as NSString).pathExtension
+            let nombreArchivo = "\(nombreSanitizado)_tarea\(tarea.id)_\(Date().timeIntervalSince1970).\(fileExtension)"
+            
+            let nuevaEntrega = try await apiService.crearEntregaConComentario(
+                tareaId: tarea.id,
+                archivo: documentData,
+                nombreArchivo: nombreArchivo,
+                comentario: nombreAlumno.isEmpty ? nil : "Entrega de: \(nombreAlumno)",
+                token: token
+            )
+            
+            await cargarEntregas(token: token)
+            selectedDocumentURL = nil
+            nombreAlumno = "" // Limpiar el campo después de subir
         } catch let apiError as APIError {
             error = apiError.localizedDescription
         } catch let generalError {
@@ -145,20 +193,38 @@ struct TaskDetailView: View {
                             .fontWeight(.semibold)
                         Spacer()
                         
-                        // Botón para agregar entrega (solo si no hay entrega para esta tarea)
-                        if !tieneEntregaParaTarea() && !viewModel.isUploadingEntrega {
-                            Button(action: {
-                                showingImagePicker = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "camera")
-                                    Text("Subir Entrega")
+                        // Botones para agregar entrega (siempre disponibles)
+                        if !viewModel.isUploadingEntrega {
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    viewModel.showingNameDialog = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "camera")
+                                        Text("Imagen")
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(6)
+                                    .font(.caption)
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
+                                
+                                Button(action: {
+                                    viewModel.showingNameDialog = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "doc.fill")
+                                        Text("PDF")
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.green)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(6)
+                                    .font(.caption)
+                                }
                             }
                         }
                     }
@@ -247,6 +313,33 @@ struct TaskDetailView: View {
                 }
             )
         }
+        .sheet(isPresented: $viewModel.isShowingDocumentPicker) {
+            DocumentPickerView(
+                allowedContentTypes: [.pdf],
+                onDocumentPicked: { url in
+                    viewModel.selectedDocumentURL = url
+                    Task {
+                        if let token = authViewModel.authToken {
+                            await viewModel.subirDocumento(tarea: tarea, documentURL: url, token: token)
+                        }
+                    }
+                }
+            )
+        }
+        .alert("Nombre del Alumno", isPresented: $viewModel.showingNameDialog) {
+            TextField("Ingrese el nombre del alumno", text: $viewModel.nombreAlumno)
+            Button("Imagen") {
+                showingImagePicker = true
+            }
+            Button("PDF") {
+                viewModel.isShowingDocumentPicker = true
+            }
+            Button("Cancelar", role: .cancel) {
+                viewModel.nombreAlumno = ""
+            }
+        } message: {
+            Text("Ingrese el nombre del alumno para identificar la entrega")
+        }
         .task {
             if let token = authViewModel.authToken {
                 await viewModel.cargarEntregas(token: token)
@@ -274,5 +367,38 @@ private func colorParaEstado(_ estado: EstadoTarea) -> Color {
         return .green
     case .Cancelada:
         return .red
+    }
+}
+
+// DocumentPickerView para seleccionar PDFs
+struct DocumentPickerView: UIViewControllerRepresentable {
+    let allowedContentTypes: [UTType]
+    let onDocumentPicked: (URL) -> Void
+    
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes)
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let parent: DocumentPickerView
+        
+        init(_ parent: DocumentPickerView) {
+            self.parent = parent
+        }
+        
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            if let url = urls.first {
+                parent.onDocumentPicked(url)
+            }
+        }
     }
 }

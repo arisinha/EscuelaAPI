@@ -186,6 +186,7 @@ struct Entrega: Codable, Identifiable, Hashable {
     let calificacion: Double?
     let retroalimentacionProfesor: String?
     let fechaCalificacion: Date?
+    let comentario: String?
     let tarea: Tarea?
     let alumno: Usuario?
     let profesor: Usuario?
@@ -193,7 +194,7 @@ struct Entrega: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, tareaId, alumnoId, nombreArchivo, rutaArchivo
         case fechaEntrega, calificacion, retroalimentacionProfesor
-        case fechaCalificacion, tarea, alumno, profesor
+        case fechaCalificacion, comentario, tarea, alumno, profesor
     }
     
     init(from decoder: Decoder) throws {
@@ -206,6 +207,7 @@ struct Entrega: Codable, Identifiable, Hashable {
         rutaArchivo = try container.decodeIfPresent(String.self, forKey: .rutaArchivo)
         calificacion = try container.decodeIfPresent(Double.self, forKey: .calificacion)
         retroalimentacionProfesor = try container.decodeIfPresent(String.self, forKey: .retroalimentacionProfesor)
+        comentario = try container.decodeIfPresent(String.self, forKey: .comentario)
         tarea = try container.decodeIfPresent(Tarea.self, forKey: .tarea)
         alumno = try container.decodeIfPresent(Usuario.self, forKey: .alumno)
         profesor = try container.decodeIfPresent(Usuario.self, forKey: .profesor)

@@ -386,6 +386,77 @@ class APIService {
         }
     }
     
+    /// Crea una nueva entrega con documento PDF
+    func crearEntregaConDocumento(tareaId: Int, documentData: Data, nombreArchivo: String, token: String) async throws -> Entrega {
+        return try await crearEntrega(tareaId: tareaId, archivo: documentData, nombreArchivo: nombreArchivo, token: token)
+    }
+    
+    /// Crea una nueva entrega con comentario personalizado
+    func crearEntregaConComentario(tareaId: Int, archivo: Data, nombreArchivo: String, comentario: String?, token: String) async throws -> Entrega {
+        guard let url = URL(string: "\(baseURL)/api/entregas") else {
+            throw APIError.invalidURL
+        }
+        
+        // Crear el boundary para multipart/form-data
+        let boundary = UUID().uuidString
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        // Construir el body multipart
+        var body = Data()
+        
+        // Agregar el campo TareaId
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"TareaId\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(tareaId)\r\n".data(using: .utf8)!)
+        
+        // Agregar comentario si existe
+        if let comentario = comentario, !comentario.isEmpty {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"Comentario\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(comentario)\r\n".data(using: .utf8)!)
+        }
+        
+        // Agregar el archivo
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"Archivo\"; filename=\"\(nombreArchivo)\"\r\n".data(using: .utf8)!)
+        
+        // Determinar el content type basado en la extensión
+        let contentType = determinarContentType(nombreArchivo: nombreArchivo)
+        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
+        body.append(archivo)
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // Cerrar el boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "Error desconocido"
+            throw APIError.requestFailed(description: "HTTP \(httpResponse.statusCode): \(errorMessage)")
+        }
+        
+        do {
+            let response = try jsonDecoder.decode(EntregaResponse.self, from: data)
+            guard let entrega = response.data else {
+                throw APIError.emptyResponse
+            }
+            return entrega
+        } catch let decodingError as DecodingError {
+            throw APIError.decodingError(description: detailedDecodingError(decodingError, data: data))
+        }
+    }
+    
     /// Califica una entrega (solo para profesores)
     func calificarEntrega(entregaId: Int, calificacion: Double, retroalimentacion: String?, token: String) async throws -> Entrega {
         guard let url = URL(string: "\(baseURL)/api/entregas/\(entregaId)/calificar") else {

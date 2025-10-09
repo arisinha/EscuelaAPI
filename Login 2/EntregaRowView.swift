@@ -8,8 +8,17 @@ struct EntregaRowView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Entrega #\(entrega.id)")
+                    Text(entregaTitulo)
                         .font(.headline)
+                    if let alumno = entrega.alumno {
+                        HStack {
+                            Image(systemName: "person.circle")
+                                .foregroundColor(.blue)
+                            Text("Alumno: \(alumno.nombreCompleto)")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                    }
                     Text("Enviado: \(formatDate(entrega.fechaEntrega))")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -72,6 +81,18 @@ struct EntregaRowView: View {
         .padding()
         .background(Color(UIColor.systemGray6))
         .cornerRadius(12)
+    }
+    
+    private var entregaTitulo: String {
+        // Si hay comentario y contiene "Entrega de:", extraer el nombre
+        if let comentario = entrega.comentario, 
+           comentario.hasPrefix("Entrega de: ") {
+            let nombre = String(comentario.dropFirst("Entrega de: ".count))
+            return "Entrega de \(nombre)"
+        }
+        
+        // Si no hay comentario personalizado, usar el formato tradicional
+        return "Entrega #\(entrega.id)"
     }
     
     private func formatDate(_ date: Date) -> String {
