@@ -13,6 +13,7 @@
 		1016C6612E973E2700E01FA4 /* ImagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016C65E2E973E2700E01FA4 /* ImagePickerView.swift */; };
 		1016C6622E973E2700E01FA4 /* EntregasListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016C65C2E973E2700E01FA4 /* EntregasListView.swift */; };
 		103895FB2E971AF000D2FC19 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103895FA2E971AF000D2FC19 /* DataService.swift */; };
+		104CB12F2E97ECFF00D6A9A2 /* EntregaButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */; };
 		105F7D6D2E8F85B3004724CB /* VistaLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D6A2E8F85B3004724CB /* VistaLogin.swift */; };
 		105F7D6F2E8F85B3004724CB /* LoginApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D692E8F85B3004724CB /* LoginApp.swift */; };
 		105F7D702E8F85B3004724CB /* Autenticacion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D662E8F85B3004724CB /* Autenticacion.swift */; };
@@ -48,6 +49,7 @@
 		1016C65D2E973E2700E01FA4 /* GradingSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradingSheetView.swift; sourceTree = "<group>"; };
 		1016C65E2E973E2700E01FA4 /* ImagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerView.swift; sourceTree = "<group>"; };
 		103895FA2E971AF000D2FC19 /* DataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
+		104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntregaButtonsView.swift; sourceTree = "<group>"; };
 		105F7D3A2E8F8560004724CB /* AppTareas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppTareas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		105F7D492E8F8561004724CB /* AppTareasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTareasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		105F7D532E8F8561004724CB /* AppTareasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTareasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +140,7 @@
 				105F7D6B2E8F85B3004724CB /* VistaMain.swift */,
 				10D1166C2E94301C0070613C /* AsignacionesModels.swift */,
 				100847662E970E4D0006D721 /* TaskDetailView.swift */,
+				104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */,
 			);
 			path = "Login 2";
 			sourceTree = "<group>";
@@ -286,6 +289,7 @@
 				100847672E970E4E0006D721 /* TaskDetailView.swift in Sources */,
 				103895FB2E971AF000D2FC19 /* DataService.swift in Sources */,
 				105F7D6D2E8F85B3004724CB /* VistaLogin.swift in Sources */,
+				104CB12F2E97ECFF00D6A9A2 /* EntregaButtonsView.swift in Sources */,
 				10D1166B2E942F4F0070613C /* TaskListView.swift in Sources */,
 				10D116632E942C920070613C /* UniversityModels.swift in Sources */,
 				10D116652E942CBB0070613C /* VistaGrupos.swift in Sources */,

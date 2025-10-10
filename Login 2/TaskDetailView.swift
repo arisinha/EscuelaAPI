@@ -4,6 +4,11 @@ import Combine
 import PhotosUI
 import UniformTypeIdentifiers
 
+enum TipoEntrega {
+    case imagen
+    case pdf
+}
+
 @MainActor
 class TaskDetailViewModel: ObservableObject {
     @Published var entregas: [Entrega] = []
@@ -20,7 +25,8 @@ class TaskDetailViewModel: ObservableObject {
     @Published var isShowingDocumentPicker = false
     @Published var selectedDocumentURL: URL?
     @Published var nombreAlumno: String = ""
-    @Published var showingNameDialog = false
+    @Published var showingEntregaSelector = false
+    @Published var tipoEntrega: TipoEntrega = .imagen
     
     private let apiService = APIService.shared
     
@@ -53,7 +59,7 @@ class TaskDetailViewModel: ObservableObject {
         let nombreArchivo = "\(nombreSanitizado)_tarea\(tarea.id)_\(Date().timeIntervalSince1970).jpg"
         
         do {
-            let nuevaEntrega = try await apiService.crearEntregaConComentario(
+            _ = try await apiService.crearEntregaConComentario(
                 tareaId: tarea.id,
                 archivo: imageData,
                 nombreArchivo: nombreArchivo,
@@ -91,7 +97,7 @@ class TaskDetailViewModel: ObservableObject {
             let fileExtension = (originalName as NSString).pathExtension
             let nombreArchivo = "\(nombreSanitizado)_tarea\(tarea.id)_\(Date().timeIntervalSince1970).\(fileExtension)"
             
-            let nuevaEntrega = try await apiService.crearEntregaConComentario(
+            _ = try await apiService.crearEntregaConComentario(
                 tareaId: tarea.id,
                 archivo: documentData,
                 nombreArchivo: nombreArchivo,
@@ -193,40 +199,13 @@ struct TaskDetailView: View {
                             .fontWeight(.semibold)
                         Spacer()
                         
-                        // Botones para agregar entrega (siempre disponibles)
-                        if !viewModel.isUploadingEntrega {
-                            HStack(spacing: 8) {
-                                Button(action: {
-                                    viewModel.showingNameDialog = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "camera")
-                                        Text("Imagen")
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(6)
-                                    .font(.caption)
-                                }
-                                
-                                Button(action: {
-                                    viewModel.showingNameDialog = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "doc.fill")
-                                        Text("PDF")
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Color.green)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(6)
-                                    .font(.caption)
-                                }
+                        // Botón único para agregar entrega
+                        BotonSubirEntrega(
+                            isLoading: viewModel.isUploadingEntrega,
+                            onSubirEntrega: {
+                                viewModel.showingEntregaSelector = true
                             }
-                        }
+                        )
                     }
                     
                     if viewModel.isLoading {
@@ -326,19 +305,32 @@ struct TaskDetailView: View {
                 }
             )
         }
-        .alert("Nombre del Alumno", isPresented: $viewModel.showingNameDialog) {
-            TextField("Ingrese el nombre del alumno", text: $viewModel.nombreAlumno)
-            Button("Imagen") {
-                showingImagePicker = true
+        .overlay {
+            if viewModel.showingEntregaSelector {
+                NotificacionSeleccionEntrega(
+                    nombreAlumno: $viewModel.nombreAlumno,
+                    isLoading: viewModel.isUploadingEntrega,
+                    onSeleccionarImagen: {
+                        viewModel.tipoEntrega = .imagen
+                        viewModel.showingEntregaSelector = false
+                        showingImagePicker = true
+                    },
+                    onSeleccionarPDF: {
+                        viewModel.tipoEntrega = .pdf
+                        viewModel.showingEntregaSelector = false
+                        viewModel.isShowingDocumentPicker = true
+                    },
+                    onCancelar: {
+                        viewModel.showingEntregaSelector = false
+                        viewModel.nombreAlumno = ""
+                    }
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .scale(scale: 0.8).combined(with: .opacity)
+                ))
+                .animation(.easeInOut(duration: 0.3), value: viewModel.showingEntregaSelector)
             }
-            Button("PDF") {
-                viewModel.isShowingDocumentPicker = true
-            }
-            Button("Cancelar", role: .cancel) {
-                viewModel.nombreAlumno = ""
-            }
-        } message: {
-            Text("Ingrese el nombre del alumno para identificar la entrega")
         }
         .task {
             if let token = authViewModel.authToken {

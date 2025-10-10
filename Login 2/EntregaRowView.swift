@@ -33,19 +33,19 @@ struct EntregaRowView: View {
                             .foregroundColor(.secondary)
                         Text("\(String(format: "%.1f", entrega.calificacion ?? 0))/100")
                             .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(colorParaCalificacion(entrega.calificacion ?? 0))
-                    }
+                            .fontWeight(.bold)                    }
                 } else {
+                    // Botón unificado de calificar
                     Button("Calificar") {
                         onCalificar(entrega)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                     .background(Color.blue)
                     .foregroundColor(.white)
-                    .cornerRadius(6)
-                    .font(.caption)
+                    .cornerRadius(8)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                 }
             }
             
@@ -102,18 +102,7 @@ struct EntregaRowView: View {
         return formatter.string(from: date)
     }
     
-    private func colorParaCalificacion(_ calificacion: Double) -> Color {
-        switch calificacion {
-        case 90...100:
-            return .green
-        case 70..<90:
-            return .blue
-        case 60..<70:
-            return .orange
-        default:
-            return .red
-        }
-    }
+
     
     private func iconoParaArchivo(_ nombreArchivo: String) -> String {
         let fileExtension = (nombreArchivo as NSString).pathExtension.lowercased()

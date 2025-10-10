@@ -40,7 +40,7 @@ class EntregasListViewModel: ObservableObject {
         error = nil
         
         do {
-            let entregaCalificada = try await apiService.calificarEntrega(
+            _ = try await apiService.calificarEntrega(
                 entregaId: entrega.id,
                 calificacion: calificacionDouble,
                 retroalimentacion: retroalimentacion.isEmpty ? nil : retroalimentacion,
@@ -84,14 +84,16 @@ struct EntregasListView: View {
                             .multilineTextAlignment(.center)
                             .padding()
                         
-                        Button("Reintentar") {
+                        BotonEntregaUnificado(
+                            titulo: "Reintentar",
+                            tipo: .reintentar
+                        ) {
                             Task {
                                 if let token = authViewModel.authToken {
                                     await viewModel.cargarEntregasSinCalificar(token: token)
                                 }
                             }
                         }
-                        .buttonStyle(.borderedProminent)
                     }
                 } else if viewModel.entregas.isEmpty {
                     VStack(spacing: 16) {
@@ -194,16 +196,12 @@ struct EntregaSinCalificarRowView: View {
                 
                 Spacer()
                 
-                Button("Calificar") {
+                BotonEntregaUnificado(
+                    titulo: "Calificar",
+                    tipo: .calificar
+                ) {
                     onCalificar(entrega)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-                .font(.subheadline)
-                .fontWeight(.medium)
             }
             
             if let nombreArchivo = entrega.nombreArchivo {

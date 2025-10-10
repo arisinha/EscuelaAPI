@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import CryptoKit
 
 #if DEBUG
@@ -150,21 +149,11 @@ class APIService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        #if DEBUG
-        print("[API] GET /api/Tareas -> URL:", url.absoluteString)
-        print("[API] Authorization:", request.value(forHTTPHeaderField: "Authorization") ?? "nil")
-        #endif
-
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-
-        #if DEBUG
-        print("[API] /api/Tareas status:", httpResponse.statusCode)
-        print("[API] /api/Tareas body:", String(data: data, encoding: .utf8) ?? "nil")
-        #endif
 
         if httpResponse.statusCode == 401 {
             throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
@@ -213,21 +202,11 @@ class APIService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        #if DEBUG
-        print("[API] GET /api/Grupos/\(grupoId)/tareas -> URL:", url.absoluteString)
-        print("[API] Authorization:", request.value(forHTTPHeaderField: "Authorization") ?? "nil")
-        #endif
-
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-
-        #if DEBUG
-        print("[API] /api/Grupos/\(grupoId)/tareas status:", httpResponse.statusCode)
-        print("[API] /api/Grupos/\(grupoId)/tareas body:", String(data: data, encoding: .utf8) ?? "nil")
-        #endif
 
         if httpResponse.statusCode == 401 {
             throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
@@ -276,21 +255,11 @@ class APIService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        #if DEBUG
-        print("[API] GET /api/Grupos -> URL:", url.absoluteString)
-        print("[API] Authorization:", request.value(forHTTPHeaderField: "Authorization") ?? "nil")
-        #endif
-
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-
-        #if DEBUG
-        print("[API] /api/Grupos status:", httpResponse.statusCode)
-        print("[API] /api/Grupos body:", String(data: data, encoding: .utf8) ?? "nil")
-        #endif
 
         if httpResponse.statusCode == 401 {
             throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
@@ -332,6 +301,314 @@ class APIService {
             throw apiError
         } catch {
             throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Crear Grupo
+    
+    func crearGrupo(nombreMateria: String, codigoGrupo: String, token: String) async throws -> Grupo {
+        guard let url = URL(string: "\(baseURL)/api/Grupos") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "id": 0, // El servidor generará el ID
+            "nombreMateria": nombreMateria,
+            "codigoGrupo": codigoGrupo
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al crear grupo. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+
+        do {
+            // El servidor devuelve el grupo creado
+            return try jsonDecoder.decode(Grupo.self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        } catch let apiError as APIError {
+            throw apiError
+        } catch {
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Actualizar Grupo
+    
+    func actualizarGrupo(id: Int, nombreMateria: String, codigoGrupo: String, token: String) async throws -> Grupo {
+        guard let url = URL(string: "\(baseURL)/api/Grupos/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "id": id,
+            "nombreMateria": nombreMateria,
+            "codigoGrupo": codigoGrupo
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al actualizar grupo. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+
+        do {
+            return try jsonDecoder.decode(Grupo.self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        } catch let apiError as APIError {
+            throw apiError
+        } catch {
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Eliminar Grupo
+    
+    func eliminarGrupo(id: Int, token: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/Grupos/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al eliminar grupo. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+    }
+
+    // MARK: - Crear Tarea
+    
+    func crearTarea(titulo: String, descripcion: String?, grupoId: Int?, token: String) async throws -> Tarea {
+        guard let url = URL(string: "\(baseURL)/api/Tareas") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "titulo": titulo
+        ]
+        
+        if let descripcion = descripcion, !descripcion.trimmingCharacters(in: .whitespaces).isEmpty {
+            body["descripcion"] = descripcion
+        }
+        
+        if let grupoId = grupoId {
+            body["grupoId"] = grupoId
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al crear tarea. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+
+        do {
+            // El servidor puede devolver un wrapper con success y data
+            if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let success = jsonObject["success"] as? Bool,
+               success,
+               let tareaData = jsonObject["data"] as? [String: Any] {
+                let tareaJson = try JSONSerialization.data(withJSONObject: tareaData)
+                return try jsonDecoder.decode(Tarea.self, from: tareaJson)
+            } else {
+                // O directamente la tarea
+                return try jsonDecoder.decode(Tarea.self, from: data)
+            }
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        } catch let apiError as APIError {
+            throw apiError
+        } catch {
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Actualizar Tarea
+    
+    func actualizarTarea(id: Int, titulo: String, descripcion: String?, grupoId: Int?, token: String) async throws -> Tarea {
+        guard let url = URL(string: "\(baseURL)/api/Tareas/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "id": id,
+            "titulo": titulo
+        ]
+        
+        if let descripcion = descripcion, !descripcion.trimmingCharacters(in: .whitespaces).isEmpty {
+            body["descripcion"] = descripcion
+        }
+        
+        if let grupoId = grupoId {
+            body["grupoId"] = grupoId
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al actualizar tarea. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+
+        do {
+            // El servidor puede devolver un wrapper con success y data
+            if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let success = jsonObject["success"] as? Bool,
+               success,
+               let tareaData = jsonObject["data"] as? [String: Any] {
+                let tareaJson = try JSONSerialization.data(withJSONObject: tareaData)
+                return try jsonDecoder.decode(Tarea.self, from: tareaJson)
+            } else {
+                // O directamente la tarea
+                return try jsonDecoder.decode(Tarea.self, from: data)
+            }
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        } catch let apiError as APIError {
+            throw apiError
+        } catch {
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Eliminar Tarea
+    
+    func eliminarTarea(id: Int, token: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/Tareas/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al eliminar tarea. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
         }
     }
 

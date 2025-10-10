@@ -11,7 +11,6 @@ class LoginViewModel: ObservableObject {
     // La vista lo llamará directamente.
     func performLogin(authViewModel: AuthenticationViewModel) {
         isLoading = true
-        print("Iniciando sesión para el profesor: \(teacherID)")
 
         Task {
             defer { isLoading = false }
