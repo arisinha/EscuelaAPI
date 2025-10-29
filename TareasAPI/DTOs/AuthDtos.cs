@@ -7,6 +7,12 @@ public record LoginRequest(
     [Required] string Password
 );
 
+public record RegisterRequest(
+    [Required] string NombreUsuario,
+    [Required] string Password,
+    [Required] string NombreCompleto
+);
+
 public record AuthResponse(
     string Token,
     UsuarioDto Usuario

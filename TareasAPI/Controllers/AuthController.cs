@@ -32,4 +32,22 @@ public class AuthController : ControllerBase
 
         return Ok(authResponse);
     }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var authResponse = await _authService.RegisterAsync(registerRequest);
+
+        if (authResponse == null)
+        {
+            return BadRequest("El nombre de usuario ya existe.");
+        }
+
+        return Ok(authResponse);
+    }
 }

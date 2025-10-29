@@ -81,6 +81,35 @@ public class AuthService : IAuthService
         return new AuthResponse(token, usuarioDto);
     }
 
+    public async Task<AuthResponse?> RegisterAsync(RegisterRequest registerRequest)
+    {
+        // Check if username already exists
+        var existingUser = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.NombreUsuario == registerRequest.NombreUsuario);
+
+        if (existingUser != null)
+            return null; // Username already taken
+
+        // Create new user with hashed password
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
+
+        var nuevoUsuario = new Usuario
+        {
+            NombreUsuario = registerRequest.NombreUsuario,
+            NombreCompleto = registerRequest.NombreCompleto,
+            PasswordHash = hashedPassword
+        };
+
+        _context.Usuarios.Add(nuevoUsuario);
+        await _context.SaveChangesAsync();
+
+        // Generate token for the new user
+        var token = GenerateJwtToken(nuevoUsuario);
+        var usuarioDto = new UsuarioDto(nuevoUsuario.Id, nuevoUsuario.NombreUsuario, nuevoUsuario.NombreCompleto);
+
+        return new AuthResponse(token, usuarioDto);
+    }
+
     private string GenerateJwtToken(Usuario usuario)
     {
         var issuer = _config["Jwt:Issuer"];
