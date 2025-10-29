@@ -12,6 +12,9 @@
 		1016C6602E973E2700E01FA4 /* GradingSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016C65D2E973E2700E01FA4 /* GradingSheetView.swift */; };
 		1016C6612E973E2700E01FA4 /* ImagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016C65E2E973E2700E01FA4 /* ImagePickerView.swift */; };
 		1016C6622E973E2700E01FA4 /* EntregasListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1016C65C2E973E2700E01FA4 /* EntregasListView.swift */; };
+		102AE5862EB274F70011298D /* GroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102AE5852EB274F70011298D /* GroupDetailView.swift */; };
+		102AE58A2EB275090011298D /* EntregasListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102AE5872EB275090011298D /* EntregasListView.swift */; };
+		102AE58B2EB275090011298D /* GradingSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102AE5882EB275090011298D /* GradingSheetView.swift */; };
 		103895FB2E971AF000D2FC19 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103895FA2E971AF000D2FC19 /* DataService.swift */; };
 		104CB12F2E97ECFF00D6A9A2 /* EntregaButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */; };
 		105F7D6D2E8F85B3004724CB /* VistaLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105F7D6A2E8F85B3004724CB /* VistaLogin.swift */; };
@@ -48,6 +51,9 @@
 		1016C65C2E973E2700E01FA4 /* EntregasListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntregasListView.swift; sourceTree = "<group>"; };
 		1016C65D2E973E2700E01FA4 /* GradingSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradingSheetView.swift; sourceTree = "<group>"; };
 		1016C65E2E973E2700E01FA4 /* ImagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerView.swift; sourceTree = "<group>"; };
+		102AE5852EB274F70011298D /* GroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailView.swift; sourceTree = "<group>"; };
+		102AE5872EB275090011298D /* EntregasListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntregasListView.swift; sourceTree = "<group>"; };
+		102AE5882EB275090011298D /* GradingSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradingSheetView.swift; sourceTree = "<group>"; };
 		103895FA2E971AF000D2FC19 /* DataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
 		104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntregaButtonsView.swift; sourceTree = "<group>"; };
 		105F7D3A2E8F8560004724CB /* AppTareas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppTareas.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +108,101 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		102AE5892EB275090011298D /* Assignments */ = {
+			isa = PBXGroup;
+			children = (
+				102AE5872EB275090011298D /* EntregasListView.swift */,
+				102AE5882EB275090011298D /* GradingSheetView.swift */,
+			);
+			path = Assignments;
+			sourceTree = "<group>";
+		};
+		105E52462E98D3750017ACB0 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				105E524E2E98D3DB0017ACB0 /* Components */,
+				105E524D2E98D3D50017ACB0 /* Groups */,
+				105E524C2E98D3C50017ACB0 /* Assignments */,
+				105E524B2E98D3BC0017ACB0 /* Tasks */,
+				105E524A2E98D3AF0017ACB0 /* Authentication */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		105E52472E98D3820017ACB0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				10D116622E942C8C0070613C /* UniversityModels.swift */,
+				10D1166C2E94301C0070613C /* AsignacionesModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		105E52482E98D38B0017ACB0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				10D116682E942F190070613C /* ApiService.swift */,
+				103895FA2E971AF000D2FC19 /* DataService.swift */,
+				105F7D662E8F85B3004724CB /* Autenticacion.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		105E52492E98D3A20017ACB0 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				105F7D692E8F85B3004724CB /* LoginApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		105E524A2E98D3AF0017ACB0 /* Authentication */ = {
+			isa = PBXGroup;
+			children = (
+				105F7D6A2E8F85B3004724CB /* VistaLogin.swift */,
+				105F7D6B2E8F85B3004724CB /* VistaMain.swift */,
+			);
+			path = Authentication;
+			sourceTree = "<group>";
+		};
+		105E524B2E98D3BC0017ACB0 /* Tasks */ = {
+			isa = PBXGroup;
+			children = (
+				10D1166A2E942F460070613C /* TaskListView.swift */,
+				100847662E970E4D0006D721 /* TaskDetailView.swift */,
+				1016C65B2E973E2700E01FA4 /* EntregaRowView.swift */,
+			);
+			path = Tasks;
+			sourceTree = "<group>";
+		};
+		105E524C2E98D3C50017ACB0 /* Assignments */ = {
+			isa = PBXGroup;
+			children = (
+				1016C65C2E973E2700E01FA4 /* EntregasListView.swift */,
+				1016C65D2E973E2700E01FA4 /* GradingSheetView.swift */,
+			);
+			path = Assignments;
+			sourceTree = "<group>";
+		};
+		105E524D2E98D3D50017ACB0 /* Groups */ = {
+			isa = PBXGroup;
+			children = (
+				10D116642E942CB80070613C /* VistaGrupos.swift */,
+				102AE5852EB274F70011298D /* GroupDetailView.swift */,
+				102AE5892EB275090011298D /* Assignments */,
+			);
+			path = Groups;
+			sourceTree = "<group>";
+		};
+		105E524E2E98D3DB0017ACB0 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				1016C65E2E973E2700E01FA4 /* ImagePickerView.swift */,
+				104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		105F7D312E8F8560004724CB = {
 			isa = PBXGroup;
 			children = (
@@ -125,22 +226,10 @@
 		105F7D6C2E8F85B3004724CB /* Login 2 */ = {
 			isa = PBXGroup;
 			children = (
-				1016C65B2E973E2700E01FA4 /* EntregaRowView.swift */,
-				1016C65C2E973E2700E01FA4 /* EntregasListView.swift */,
-				1016C65D2E973E2700E01FA4 /* GradingSheetView.swift */,
-				1016C65E2E973E2700E01FA4 /* ImagePickerView.swift */,
-				10D1166A2E942F460070613C /* TaskListView.swift */,
-				10D116682E942F190070613C /* ApiService.swift */,
-				10D116642E942CB80070613C /* VistaGrupos.swift */,
-				10D116622E942C8C0070613C /* UniversityModels.swift */,
-				103895FA2E971AF000D2FC19 /* DataService.swift */,
-				105F7D662E8F85B3004724CB /* Autenticacion.swift */,
-				105F7D692E8F85B3004724CB /* LoginApp.swift */,
-				105F7D6A2E8F85B3004724CB /* VistaLogin.swift */,
-				105F7D6B2E8F85B3004724CB /* VistaMain.swift */,
-				10D1166C2E94301C0070613C /* AsignacionesModels.swift */,
-				100847662E970E4D0006D721 /* TaskDetailView.swift */,
-				104CB12E2E97ECFF00D6A9A2 /* EntregaButtonsView.swift */,
+				105E52492E98D3A20017ACB0 /* App */,
+				105E52482E98D38B0017ACB0 /* Services */,
+				105E52472E98D3820017ACB0 /* Models */,
+				105E52462E98D3750017ACB0 /* Views */,
 			);
 			path = "Login 2";
 			sourceTree = "<group>";
@@ -288,7 +377,10 @@
 			files = (
 				100847672E970E4E0006D721 /* TaskDetailView.swift in Sources */,
 				103895FB2E971AF000D2FC19 /* DataService.swift in Sources */,
+				102AE5862EB274F70011298D /* GroupDetailView.swift in Sources */,
 				105F7D6D2E8F85B3004724CB /* VistaLogin.swift in Sources */,
+				102AE58A2EB275090011298D /* EntregasListView.swift in Sources */,
+				102AE58B2EB275090011298D /* GradingSheetView.swift in Sources */,
 				104CB12F2E97ECFF00D6A9A2 /* EntregaButtonsView.swift in Sources */,
 				10D1166B2E942F4F0070613C /* TaskListView.swift in Sources */,
 				10D116632E942C920070613C /* UniversityModels.swift in Sources */,

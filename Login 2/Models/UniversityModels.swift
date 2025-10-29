@@ -266,3 +266,119 @@ struct EntregasListResponse: Codable {
     let count: Int
     let data: [Entrega]
 }
+
+// MARK: - Asistencia Models
+
+enum EstadoAsistencia: Int, Codable, CaseIterable {
+    case presente = 1
+    case ausente = 2
+    case justificado = 3
+    
+    var displayName: String {
+        switch self {
+        case .presente: return "Presente"
+        case .ausente: return "Ausente"
+        case .justificado: return "Justificado"
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .presente: return "green"
+        case .ausente: return "red"
+        case .justificado: return "yellow"
+        }
+    }
+}
+
+struct Asistencia: Codable, Identifiable, Hashable {
+    let id: Int
+    let usuarioId: Int
+    let grupoId: Int
+    let fecha: Date
+    let estado: EstadoAsistencia
+    let observaciones: String?
+    
+    // Propiedades de navegación opcionales
+    let usuario: Usuario?
+    let grupo: Grupo?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, usuarioId, grupoId, fecha, estado, observaciones, usuario, grupo
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(Int.self, forKey: .id)
+        usuarioId = try container.decode(Int.self, forKey: .usuarioId)
+        grupoId = try container.decode(Int.self, forKey: .grupoId)
+        estado = try container.decode(EstadoAsistencia.self, forKey: .estado)
+        observaciones = try container.decodeIfPresent(String.self, forKey: .observaciones)
+        usuario = try container.decodeIfPresent(Usuario.self, forKey: .usuario)
+        grupo = try container.decodeIfPresent(Grupo.self, forKey: .grupo)
+        
+        // Decodificar fecha
+        fecha = try Self.decodeDate(from: container, forKey: .fecha)
+    }
+    
+    init(id: Int, usuarioId: Int, grupoId: Int, fecha: Date, estado: EstadoAsistencia, observaciones: String?, usuario: Usuario? = nil, grupo: Grupo? = nil) {
+        self.id = id
+        self.usuarioId = usuarioId
+        self.grupoId = grupoId
+        self.fecha = fecha
+        self.estado = estado
+        self.observaciones = observaciones
+        self.usuario = usuario
+        self.grupo = grupo
+    }
+    
+    private static func decodeDate(from container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) throws -> Date {
+        if let dateString = try? container.decode(String.self, forKey: key) {
+            let iso8601Formatter = ISO8601DateFormatter()
+            iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+            if let date = iso8601Formatter.date(from: dateString) {
+                return date
+            }
+            
+            iso8601Formatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+            if let date = iso8601Formatter.date(from: dateString) {
+                return date
+            }
+            
+            iso8601Formatter.formatOptions = [.withInternetDateTime]
+            if let date = iso8601Formatter.date(from: dateString) {
+                return date
+            }
+        }
+        throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: [key], debugDescription: "Formato de fecha inválido"))
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: Asistencia, rhs: Asistencia) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
+struct CrearAsistenciaRequest: Codable {
+    let usuarioId: Int
+    let grupoId: Int
+    let fecha: Date
+    let estado: Int
+    let observaciones: String?
+}
+
+struct AsistenciaResponse: Codable {
+    let success: Bool
+    let message: String?
+    let data: Asistencia?
+}
+
+struct AsistenciasListResponse: Codable {
+    let success: Bool
+    let count: Int
+    let data: [Asistencia]
+}

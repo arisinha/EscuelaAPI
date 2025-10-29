@@ -138,6 +138,45 @@ class APIService {
         }
     }
 
+    // MARK: - Register
+    
+    func register(nombreUsuario: String, contrasena: String, nombreCompleto: String) async throws -> LoginResponse {
+        guard let url = URL(string: "\(baseURL)/api/Auth/register") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: String] = [
+            "NombreUsuario": nombreUsuario,
+            "Password": contrasena,
+            "NombreCompleto": nombreCompleto
+        ]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al registrar usuario. (código \(httpResponse.statusCode))"
+            throw APIError.requestFailed(description: message)
+        }
+
+        do {
+            return try jsonDecoder.decode(LoginResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
+    }
+
     // MARK: - Obtener Tareas
     
     func obtenerTareas(paraUsuarioId id: Int, token: String) async throws -> [Tarea] {
@@ -895,6 +934,192 @@ class APIService {
             
         @unknown default:
             return "Error de decodificación desconocido. JSON: \(jsonString)"
+        }
+    }
+    
+    // MARK: - Asistencias (Attendance)
+    
+    /// Crea un nuevo registro de asistencia
+    func crearAsistencia(usuarioId: Int, grupoId: Int, fecha: Date, estado: EstadoAsistencia, observaciones: String?, token: String) async throws -> Asistencia {
+        guard let url = URL(string: "\(baseURL)/api/Asistencias") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        
+        let body = CrearAsistenciaRequest(
+            usuarioId: usuarioId,
+            grupoId: grupoId,
+            fecha: fecha,
+            estado: estado.rawValue,
+            observaciones: observaciones
+        )
+        request.httpBody = try encoder.encode(body)
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al crear asistencia. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+        
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+        
+        do {
+            return try jsonDecoder.decode(Asistencia.self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        }
+    }
+    
+    /// Obtiene las asistencias de un grupo en una fecha específica
+    func obtenerAsistenciasPorGrupoYFecha(grupoId: Int, fecha: Date, token: String) async throws -> [Asistencia] {
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+        let fechaString = dateFormatter.string(from: fecha)
+        
+        guard var urlComponents = URLComponents(string: "\(baseURL)/api/Asistencias/grupo/\(grupoId)") else {
+            throw APIError.invalidURL
+        }
+        urlComponents.queryItems = [URLQueryItem(name: "fecha", value: fechaString)]
+        
+        guard let url = urlComponents.url else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al obtener asistencias. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+        
+        guard !data.isEmpty else {
+            // Retornar array vacío si no hay asistencias
+            return []
+        }
+        
+        do {
+            return try jsonDecoder.decode([Asistencia].self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        }
+    }
+    
+    /// Obtiene todas las asistencias de un usuario
+    func obtenerAsistenciasPorUsuario(usuarioId: Int, token: String) async throws -> [Asistencia] {
+        guard let url = URL(string: "\(baseURL)/api/Asistencias/usuario/\(usuarioId)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al obtener asistencias del usuario. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+        
+        guard !data.isEmpty else {
+            return []
+        }
+        
+        do {
+            return try jsonDecoder.decode([Asistencia].self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
+        }
+    }
+    
+    /// Obtiene una asistencia por ID
+    func obtenerAsistenciaPorId(id: Int, token: String) async throws -> Asistencia {
+        guard let url = URL(string: "\(baseURL)/api/Asistencias/\(id)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        if httpResponse.statusCode == 401 {
+            throw APIError.requestFailed(description: "No autorizado. La sesión puede haber expirado.")
+        }
+        
+        if httpResponse.statusCode == 404 {
+            throw APIError.requestFailed(description: "Asistencia no encontrada.")
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let serverMessage = String(data: data, encoding: .utf8)
+            let message = (serverMessage?.isEmpty == false)
+                ? serverMessage!
+                : "Error al obtener asistencia. Código: \(httpResponse.statusCode)"
+            throw APIError.requestFailed(description: message)
+        }
+        
+        guard !data.isEmpty else {
+            throw APIError.emptyResponse
+        }
+        
+        do {
+            return try jsonDecoder.decode(Asistencia.self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDescription = detailedDecodingError(decodingError, data: data)
+            throw APIError.decodingError(description: errorDescription)
         }
     }
 }

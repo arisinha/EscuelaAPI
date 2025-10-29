@@ -208,7 +208,7 @@ struct GroupsListView: View {
                     }
                 }
                 .navigationDestination(for: Grupo.self) { grupoSeleccionado in
-                    TasksListView(grupo: grupoSeleccionado)
+                    GroupDetailView(grupo: grupoSeleccionado)
                 }
             }
         }
