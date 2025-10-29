@@ -9,6 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Tarea> Tareas { get; set; }
     public DbSet<Grupo> Grupos { get; set; }
     public DbSet<Entrega> Entregas { get; set; }
+    public DbSet<Asistencia> Asistencias { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -93,6 +94,36 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             // Index for better performance (not unique to allow multiple deliveries per student per task)
             entity.HasIndex(e => new { e.TareaId, e.AlumnoId })
                 .HasDatabaseName("IX_Entregas_TareaId_AlumnoId");
+        });
+
+        modelBuilder.Entity<Asistencia>(entity =>
+        {
+            entity.ToTable("Asistencias");
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.Fecha).HasColumnType("datetime").IsRequired();
+            // Store DateTime as UTC
+            entity.Property(a => a.Fecha)
+                  .HasConversion(
+                      v => v.ToUniversalTime(),
+                      v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            entity.Property(a => a.Observaciones).HasMaxLength(500);
+
+            entity.Property(a => a.Estado).HasConversion<int>().IsRequired();
+
+            entity.HasOne(a => a.Usuario)
+                .WithMany()
+                .HasForeignKey(a => a.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(a => a.Grupo)
+                .WithMany()
+                .HasForeignKey(a => a.GrupoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Index for queries by group and date
+            entity.HasIndex(a => new { a.GrupoId, a.Fecha }).HasDatabaseName("IX_Asistencias_GrupoId_Fecha");
         });
     }
 }
