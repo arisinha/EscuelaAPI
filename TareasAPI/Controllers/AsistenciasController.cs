@@ -8,6 +8,7 @@ namespace TareasApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AsistenciasController : ControllerBase
 {
     private readonly IAsistenciaService _service;
@@ -18,7 +19,6 @@ public class AsistenciasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
     public async Task<ActionResult<AsistenciaDto>> Create([FromBody] CreateAsistenciaDto dto)
     {
         if (dto == null) return BadRequest();
