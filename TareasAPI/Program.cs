@@ -33,6 +33,7 @@ builder.Services.AddScoped<IEntregaRepository, EntregaRepository>();
 builder.Services.AddScoped<IEntregaService, EntregaService>();
 builder.Services.AddScoped<IAsistenciaRepository, AsistenciaRepository>();
 builder.Services.AddScoped<IAsistenciaService, AsistenciaService>();
+builder.Services.AddScoped<IQrService, QrService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

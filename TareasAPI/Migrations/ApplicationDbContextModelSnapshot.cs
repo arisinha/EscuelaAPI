@@ -208,6 +208,21 @@ namespace TareasAPI.Migrations
                     b.ToTable("Usuarios", (string)null);
                 });
 
+            modelBuilder.Entity("GrupoUsuario", b =>
+                {
+                    b.Property<int>("GrupoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("GrupoId", "UsuarioId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("GrupoUsuarios", (string)null);
+                });
+
             modelBuilder.Entity("TareasApi.Models.Asistencia", b =>
                 {
                     b.HasOne("TareasApi.Models.Grupo", "Grupo")
@@ -225,6 +240,21 @@ namespace TareasAPI.Migrations
                     b.Navigation("Grupo");
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("GrupoUsuario", b =>
+                {
+                    b.HasOne("TareasApi.Models.Grupo", null)
+                        .WithMany()
+                        .HasForeignKey("GrupoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TareasApi.Models.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TareasApi.Models.Entrega", b =>

@@ -1,6 +1,63 @@
 @EscuelaAPI_HostAddress = http://localhost:5130
+@token = YOUR_JWT_TOKEN_HERE
 
 GET {{EscuelaAPI_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+# ============================================
+# ENDPOINTS DE LECTOR QR
+# ============================================
+
+### 1. Decodificar QR (obtener info del alumno)
+POST {{EscuelaAPI_HostAddress}}/api/Qr/decodificar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "qrData": "1"
+}
+
+###
+
+### 2. Registrar Asistencia con QR
+POST {{EscuelaAPI_HostAddress}}/api/Qr/asistencia
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "qrData": "1",
+  "grupoId": 1,
+  "fecha": "2025-11-02T10:00:00Z",
+  "estado": 1,
+  "observaciones": "Llegó puntual"
+}
+
+###
+
+### 3. Calificar Entrega con QR
+POST {{EscuelaAPI_HostAddress}}/api/Qr/calificar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "qrData": "1",
+  "entregaId": 1,
+  "calificacion": 95,
+  "retroalimentacionProfesor": "Excelente trabajo, muy completo"
+}
+
+###
+
+### 4. Agregar Alumno a Grupo con QR
+POST {{EscuelaAPI_HostAddress}}/api/Qr/agregar-grupo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "qrData": "1",
+  "grupoId": 1
+}
 
 ###
