@@ -20,4 +20,7 @@ public class Usuario
     public required string NombreCompleto { get; set; }
 
     public virtual ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
+    
+    // Relación muchos a muchos con Grupo (grupos a los que pertenece)
+    public virtual ICollection<Grupo> Grupos { get; set; } = new List<Grupo>();
 }

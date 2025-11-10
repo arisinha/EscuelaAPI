@@ -62,6 +62,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(g => g.Id);
             entity.Property(g => g.NombreMateria).IsRequired().HasMaxLength(200).HasColumnName("nombre_materia");
             entity.Property(g => g.CodigoGrupo).IsRequired().HasMaxLength(100).HasColumnName("codigo_grupo");
+            
+            // Configurar relación muchos a muchos con Usuario
+            entity.HasMany(g => g.Miembros)
+                .WithMany(u => u.Grupos)
+                .UsingEntity<Dictionary<string, object>>(
+                    "GrupoUsuario",
+                    j => j.HasOne<Usuario>().WithMany().HasForeignKey("UsuarioId").OnDelete(DeleteBehavior.Cascade),
+                    j => j.HasOne<Grupo>().WithMany().HasForeignKey("GrupoId").OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("GrupoId", "UsuarioId");
+                        j.ToTable("GrupoUsuarios");
+                    }
+                );
         });
 
         modelBuilder.Entity<Entrega>(entity =>
